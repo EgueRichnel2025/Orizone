@@ -1,6 +1,8 @@
 import { ArrowLeft, GitBranch, Trophy } from "lucide-react";
 import { Link } from "react-router";
 
+import "../styles/algorithm-pages.css";
+
 const nodeStatuses = [
   { className: "status-unexplored", label: "Non exploré" },
   { className: "status-active", label: "En cours" },
@@ -12,11 +14,38 @@ const nodeStatuses = [
 
 export default function BranchBoundPage() {
   return (
-    <section className="result-page">
-      <div className="result-page-heading">
-        <span className="section-eyebrow">ÉTAPE 04 · EXPLORER</span>
-        <h1>Arbre de recherche <em>Branch &amp; Bound.</em></h1>
-        <p>Visualisez les branchements, les bornes et les raisons d’exploration ou d’élagage des nœuds.</p>
+    <section className="result-page algorithm-page algorithm-page-bnb">
+      <div className="result-page-heading algorithm-page-heading">
+        <div className="algorithm-heading-copy">
+          <span className="section-eyebrow">ÉTAPE 04 · EXPLORER</span>
+          <h1>Arbre de recherche <em>Branch &amp; Bound.</em></h1>
+          <p>
+            Visualisez les branchements, les bornes et les raisons d’exploration
+            ou d’élagage des nœuds.
+          </p>
+          <div className="algorithm-heading-meta">
+            <span className="algorithm-heading-chip algorithm-heading-chip-copper">
+              <GitBranch size={14} strokeWidth={1.9} />
+              Programmation en nombres entiers
+            </span>
+            <span className="algorithm-heading-note">Branches · bornes · élagage</span>
+          </div>
+        </div>
+
+        <div className="algorithm-heading-art algorithm-heading-art-bnb" aria-hidden="true">
+          <svg className="bnb-art-tree" viewBox="0 0 180 108" fill="none">
+            <path d="M90 21 L47 52 M90 21 L133 52 M47 62 L24 88 M47 62 L69 88 M133 62 L111 88 M133 62 L156 88" />
+            <circle className="bnb-art-node bnb-art-root" cx="90" cy="17" r="9" />
+            <circle className="bnb-art-node bnb-art-branch" cx="47" cy="57" r="8" />
+            <circle className="bnb-art-node bnb-art-branch" cx="133" cy="57" r="8" />
+            <circle className="bnb-art-node bnb-art-leaf" cx="24" cy="92" r="6" />
+            <circle className="bnb-art-node bnb-art-leaf" cx="69" cy="92" r="6" />
+            <circle className="bnb-art-node bnb-art-leaf" cx="111" cy="92" r="6" />
+            <circle className="bnb-art-node bnb-art-leaf" cx="156" cy="92" r="6" />
+          </svg>
+          <span className="algorithm-art-caption">ARBRE · EXPLORATION</span>
+          <span className="algorithm-art-index">04</span>
+        </div>
       </div>
 
       <article className="workspace-card bnb-tree-card">

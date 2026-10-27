@@ -1,16 +1,50 @@
 import { ArrowLeft, ArrowRight, Lightbulb, Table2 } from "lucide-react";
 import { Link } from "react-router";
 
+import "../styles/algorithm-pages.css";
+
 const columns = ["Base", "x₁", "x₂", "s₁", "s₂", "Sol."];
 const rows = ["s₁", "s₂", "Cⱼ − Zⱼ"];
 
 export default function SimplexPage() {
   return (
-    <section className="result-page">
-      <div className="result-page-heading">
-        <span className="section-eyebrow">ÉTAPE 03 · RÉSOUDRE</span>
-        <h1>Méthode du <em>Simplexe.</em></h1>
-        <p>Suivez les itérations du tableau, identifiez le pivot et comprenez chaque transformation.</p>
+    <section className="result-page algorithm-page algorithm-page-simplex">
+      <div className="result-page-heading algorithm-page-heading">
+        <div className="algorithm-heading-copy">
+          <span className="section-eyebrow">ÉTAPE 03 · RÉSOUDRE</span>
+          <h1>Méthode du <em>Simplexe.</em></h1>
+          <p>
+            Suivez les itérations du tableau, identifiez le pivot et comprenez
+            chaque transformation.
+          </p>
+          <div className="algorithm-heading-meta">
+            <span className="algorithm-heading-chip">
+              <Table2 size={14} strokeWidth={1.9} />
+              Programmation linéaire
+            </span>
+            <span className="algorithm-heading-note">Tableaux · pivots · itérations</span>
+          </div>
+        </div>
+
+        <div className="algorithm-heading-art algorithm-heading-art-simplex" aria-hidden="true">
+          <div className="simplex-art-matrix">
+            {Array.from({ length: 12 }, (_, index) => (
+              <span
+                key={index}
+                className={
+                  index === 5
+                    ? "simplex-art-cell is-pivot"
+                    : index === 4 || index === 6 || index === 7
+                      ? "simplex-art-cell is-highlighted"
+                      : "simplex-art-cell"
+                }
+              />
+            ))}
+          </div>
+          <span className="simplex-art-icon"><Table2 size={28} strokeWidth={1.5} /></span>
+          <span className="algorithm-art-caption">TABLEAU · PIVOT</span>
+          <span className="algorithm-art-index">03</span>
+        </div>
       </div>
 
       <div className="iteration-toolbar">
