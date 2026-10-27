@@ -1,158 +1,123 @@
-import { ArrowRight, BookOpen, GitBranch, MoveUpRight, Sigma } from "lucide-react";
+import { ArrowRight, FileDown, GitBranch, LineChart, MoveUpRight, Table2 } from "lucide-react";
 import { Link } from "react-router";
 import NeuralBackground from "../components/background/NeuralBackground";
+import "../styles/homepage-mockup.css";
 
 const features = [
   {
-    icon: <Sigma size={22} strokeWidth={1.6} />,
-    number: "01",
-    title: "Programmation linéaire",
-    description:
-      "Explorez la méthode graphique et le Simplexe à travers des calculs détaillés.",
-    label: "SIMPLEXE",
+    icon: <Table2 size={21} strokeWidth={1.7} />,
+    title: "Simplexe",
+    description: "Programmation linéaire continue",
+    to: "/simplex",
+    accent: "simplex",
   },
   {
-    icon: <GitBranch size={22} strokeWidth={1.6} />,
-    number: "02",
-    title: "Optimisation entière",
-    description:
-      "Visualisez les séparations, les bornes et les décisions de Branch & Bound.",
-    label: "BRANCH & BOUND",
+    icon: <GitBranch size={21} strokeWidth={1.7} />,
+    title: "Branch & Bound",
+    description: "Programmation en nombres entiers",
+    to: "/branch-bound",
+    accent: "branch",
   },
   {
-    icon: <BookOpen size={22} strokeWidth={1.6} />,
-    number: "03",
-    title: "Comprendre les calculs",
-    description:
-      "Suivez les étapes et découvrez pourquoi chaque opération est nécessaire.",
-    label: "EXPLICATIONS",
+    icon: <LineChart size={21} strokeWidth={1.7} />,
+    title: "Analyse automatique",
+    description: "Propriétés et méthode adaptée",
+    to: "/analysis",
+    accent: "analysis",
+  },
+  {
+    icon: <FileDown size={21} strokeWidth={1.7} />,
+    title: "Export PDF",
+    description: "Rapports détaillés — à venir",
+    to: "/documentation",
+    accent: "export",
   },
 ];
 
-function HomePage() {
+function OrbitMark() {
   return (
-    <>
-      <section className="hero section-container">
-        <div className="hero-copy">
-          <div className="eyebrow">
-            <span className="eyebrow-dot" />
+    <svg viewBox="0 0 40 40" width="36" height="36" fill="none" aria-hidden="true">
+      <circle cx="20" cy="20" r="12" stroke="currentColor" strokeWidth="1.3" />
+      <ellipse cx="20" cy="20" rx="17" ry="7" transform="rotate(-35 20 20)" stroke="currentColor" strokeWidth="1.1" />
+      <circle cx="30" cy="11" r="2.2" fill="#C98A3D" />
+    </svg>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <div className="mockup-home-page">
+      <section className="mockup-home-hero" aria-labelledby="home-title">
+        <div className="mockup-home-copy">
+          <div className="mockup-home-eyebrow">
+            <span aria-hidden="true" />
             MATHÉMATIQUES · RECHERCHE OPÉRATIONNELLE
           </div>
 
-          <h1 className="hero-title">
-            La solution compte.
-            <br />
-            <em>Le chemin aussi.</em>
+          <h1 id="home-title">
+            <span className="mockup-title-line">Résolvez vos problèmes</span>
+            <span className="mockup-title-line">d’optimisation, <em>pas à pas.</em></span>
           </h1>
 
-          <p className="hero-description">
-            Orizone vous accompagne dans la résolution de vos problèmes
-            d’optimisation mathématique. Explorez les calculs, visualisez
-            les étapes et comprenez comment une solution est obtenue.
+          <p className="mockup-home-description">
+            Formulez votre problème, explorez les méthodes et comprenez chaque calcul,
+            de l’objectif jusqu’à la solution.
           </p>
 
-          <div className="hero-actions">
+          <div className="mockup-home-actions">
             <Link to="/solve" className="button button-primary">
-              Commencer une résolution
-              <ArrowRight size={17} />
+              Commencer une résolution <ArrowRight size={17} />
             </Link>
             <Link to="/methods" className="button button-secondary">
-              Explorer les méthodes
+              Découvrir les méthodes
             </Link>
           </div>
 
-          <div className="hero-note">
-            <span className="note-line" />
-            Pensé pour apprendre, conçu pour comprendre.
+          <div className="mockup-home-note">
+            <span aria-hidden="true" />
+            Des calculs expliqués, pas seulement des réponses.
           </div>
         </div>
 
-        <div className="hero-visual">
-          <div className="visual-topline">
-            <span>ESPACE D’OPTIMISATION</span>
-            <span className="visual-status"><span /> EXPLORATION</span>
+        <div className="mockup-network-card" aria-label="Réseau interactif de concepts d’optimisation">
+          <div className="mockup-network-toolbar" aria-hidden="true">
+            <span>RÉSEAU DES MÉTHODES</span>
+            <span className="mockup-network-live"><i /> INTERACTIF</span>
           </div>
-
-          <div className="network-stage">
+          <div className="mockup-network-stage">
             <NeuralBackground />
-            <div className="network-label label-simplex"><span>01</span>Simplexe</div>
-            <div className="network-label label-duality"><span>02</span>Dualité</div>
-            <div className="network-label label-kkt"><span>03</span>Kuhn-Tucker</div>
-            <div className="network-label label-branch"><span>04</span>Branch &amp; Bound</div>
-            <div className="network-label label-convexity"><span>05</span>Convexité</div>
-
-            <div className="network-center">
-              <OrbitMark />
-              <span>O</span>
-            </div>
-            <div className="network-equation equation-one">Z = cᵀx</div>
-            <div className="network-equation equation-two">Ax ≤ b</div>
+            <div className="mockup-network-label mockup-label-simplex"><span>01</span>Simplexe</div>
+            <div className="mockup-network-label mockup-label-duality"><span>02</span>Dualité</div>
+            <div className="mockup-network-label mockup-label-kkt"><span>03</span>KKT</div>
+            <div className="mockup-network-label mockup-label-branch"><span>04</span>Branch &amp; Bound</div>
+            <div className="mockup-network-label mockup-label-convexity"><span>05</span>Convexité</div>
+            <div className="mockup-network-center" aria-hidden="true"><OrbitMark /></div>
+            <div className="mockup-network-hint">Déplacez le curseur pour explorer le réseau</div>
           </div>
-
-          <div className="visual-bottomline">
-            <span>MODÉLISER</span><span className="visual-arrow">→</span>
-            <span>EXPLORER</span><span className="visual-arrow">→</span>
+          <div className="mockup-network-footer" aria-hidden="true">
+            <span>MODÉLISER</span><i />
+            <span>EXPLORER</span><i />
             <span>RÉSOUDRE</span>
           </div>
         </div>
       </section>
 
-      <section className="features-section section-container">
-        <div className="section-heading">
-          <div>
-            <span className="section-eyebrow">UN ESPACE POUR RAISONNER</span>
-            <h2>Les mathématiques,<br /><em>étape par étape.</em></h2>
-          </div>
-          <p>
-            De la formulation du problème à l’interprétation du résultat,
-            chaque étape doit avoir un sens.
-          </p>
-        </div>
-
-        <div className="feature-grid">
-          {features.map((feature) => (
-            <article className="feature-card" key={feature.number}>
-              <div className="feature-card-top">
-                <span className="feature-icon">{feature.icon}</span>
-                <span className="feature-number">{feature.number}</span>
-              </div>
-              <span className="feature-label">{feature.label}</span>
-              <h3>{feature.title}</h3>
-              <p>{feature.description}</p>
-              <Link
-                to="/methods"
-                className="feature-link"
-                aria-label={`Découvrir : ${feature.title}`}
-              >
-                Explorer <MoveUpRight size={16} />
-              </Link>
-            </article>
-          ))}
-        </div>
+      <section className="mockup-feature-strip" aria-label="Fonctionnalités principales">
+        {features.map((feature) => (
+          <Link
+            className={`mockup-feature mockup-feature-${feature.accent}`}
+            to={feature.to}
+            key={feature.title}
+          >
+            <span className="mockup-feature-icon">{feature.icon}</span>
+            <span className="mockup-feature-copy">
+              <strong>{feature.title}</strong>
+              <small>{feature.description}</small>
+            </span>
+            <MoveUpRight className="mockup-feature-arrow" size={15} aria-hidden="true" />
+          </Link>
+        ))}
       </section>
-
-      <section className="closing-section section-container">
-        <div>
-          <span className="section-eyebrow">VOTRE PROCHAIN PROBLÈME</span>
-          <h2>Commençons par le formuler.</h2>
-          <p>Définissez votre objectif, vos contraintes et la nature de vos variables.</p>
-        </div>
-        <Link to="/solve" className="button button-dark">
-          Créer un problème <MoveUpRight size={17} />
-        </Link>
-      </section>
-    </>
+    </div>
   );
 }
-
-function OrbitMark() {
-  return (
-    <svg viewBox="0 0 40 40" width="35" height="35" fill="none" aria-hidden="true">
-      <circle cx="20" cy="20" r="12" stroke="currentColor" strokeWidth="1.3" />
-      <ellipse cx="20" cy="20" rx="17" ry="7" transform="rotate(-35 20 20)" stroke="currentColor" strokeWidth="1.1" />
-      <circle cx="30" cy="11" r="2.2" fill="#B7793E" />
-    </svg>
-  );
-}
-
-export default HomePage;

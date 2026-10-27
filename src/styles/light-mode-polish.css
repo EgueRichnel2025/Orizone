@@ -1,0 +1,184 @@
+/* Orizone — peaufinage du thème clair uniquement.
+   Le thème sombre conserve intégralement ses couleurs actuelles. */
+
+:root:not([data-theme="dark"]) {
+  --paper: #f3f0e8;
+  --surface: #fffdf9;
+  --surface-muted: #e9e5da;
+  --ink: #252923;
+  --muted: #5f685f;
+  --green: #2f5d50;
+  --green-deep: #23483d;
+  --copper: #a96f32;
+  --border: #c9c2b4;
+}
+
+:root:not([data-theme="dark"]) body {
+  color: var(--ink);
+  background: var(--paper);
+}
+
+/* Surfaces principales : rendre le contraste entre fond et cartes perceptible. */
+:root:not([data-theme="dark"]) .site-header,
+:root:not([data-theme="dark"]) .site-footer {
+  background-color: var(--paper);
+  border-color: var(--border);
+}
+
+:root:not([data-theme="dark"]) .workspace-shell {
+  background: var(--paper);
+}
+
+:root:not([data-theme="dark"]) .workspace-sidebar {
+  background: #faf8f2;
+  border-right-color: #c9c2b4;
+  box-shadow: 5px 0 20px rgb(31 35 40 / 3%);
+}
+
+:root:not([data-theme="dark"]) .workspace-topbar {
+  background: rgb(255 253 249 / 96%);
+  border-bottom-color: var(--border);
+}
+
+:root:not([data-theme="dark"]) .workspace-status {
+  color: #536157;
+}
+
+/* Navigation : l'élément sélectionné est clairement vert forêt. */
+:root:not([data-theme="dark"]) .workspace-nav-link:hover {
+  color: var(--green-deep);
+  background: #e5ece5;
+  border-color: #d1ddd2;
+}
+
+:root:not([data-theme="dark"]) .workspace-nav-link.is-active {
+  color: #fffdf8;
+  background: var(--green);
+  border-color: var(--green);
+  box-shadow: 0 4px 12px rgb(47 93 80 / 15%);
+}
+
+:root:not([data-theme="dark"]) .workspace-nav-link.is-active svg,
+:root:not([data-theme="dark"]) .workspace-nav-link.is-active span {
+  color: inherit;
+}
+
+:root:not([data-theme="dark"]) .workspace-nav-link.is-active::before {
+  background: #d9b77c;
+}
+
+/* Cartes et panneaux : contours plus nets, ombres très discrètes. */
+:root:not([data-theme="dark"]) .feature-card,
+:root:not([data-theme="dark"]) .problem-builder-form,
+:root:not([data-theme="dark"]) .problem-preview,
+:root:not([data-theme="dark"]) .validation-panel,
+:root:not([data-theme="dark"]) .validation-modal,
+:root:not([data-theme="dark"]) .workspace-card,
+:root:not([data-theme="dark"]) .analysis-summary-card,
+:root:not([data-theme="dark"]) .iteration-toolbar,
+:root:not([data-theme="dark"]) .geometry-empty-plot,
+:root:not([data-theme="dark"]) .bnb-empty-tree,
+:root:not([data-theme="dark"]) .mockup-network-card,
+:root:not([data-theme="dark"]) .mockup-feature,
+:root:not([data-theme="dark"]) .builder-placeholder,
+:root:not([data-theme="dark"]) .step-progress {
+  border-color: var(--border);
+  box-shadow: 0 3px 14px rgb(31 35 40 / 4%);
+}
+
+:root:not([data-theme="dark"]) .feature-card,
+:root:not([data-theme="dark"]) .problem-builder-form,
+:root:not([data-theme="dark"]) .problem-preview,
+:root:not([data-theme="dark"]) .validation-modal,
+:root:not([data-theme="dark"]) .workspace-card,
+:root:not([data-theme="dark"]) .analysis-summary-card,
+:root:not([data-theme="dark"]) .iteration-toolbar,
+:root:not([data-theme="dark"]) .mockup-feature,
+:root:not([data-theme="dark"]) .builder-placeholder,
+:root:not([data-theme="dark"]) .step-progress {
+  background-color: var(--surface);
+}
+
+:root:not([data-theme="dark"]) .closing-section,
+:root:not([data-theme="dark"]) .simplex-table tbody th {
+  background-color: var(--surface-muted);
+  border-color: var(--border);
+}
+
+/* Champs : délimitation plus lisible, focus vert visible au clavier et à la souris. */
+:root:not([data-theme="dark"]) input:not([type="checkbox"]):not([type="radio"]),
+:root:not([data-theme="dark"]) select,
+:root:not([data-theme="dark"]) textarea {
+  color: var(--ink);
+  background-color: #fffefa;
+  border-color: #bcb5a8;
+}
+
+:root:not([data-theme="dark"]) input::placeholder,
+:root:not([data-theme="dark"]) textarea::placeholder {
+  color: #767d73;
+  opacity: 1;
+}
+
+:root:not([data-theme="dark"]) input:focus-visible,
+:root:not([data-theme="dark"]) select:focus-visible,
+:root:not([data-theme="dark"]) textarea:focus-visible {
+  border-color: var(--green);
+  outline: 3px solid rgb(47 93 80 / 14%);
+  outline-offset: 1px;
+}
+
+/* Tableaux de calcul : lignes et colonnes plus faciles à suivre. */
+:root:not([data-theme="dark"]) .simplex-table th,
+:root:not([data-theme="dark"]) .simplex-table td {
+  border-color: #c9c2b4;
+}
+
+:root:not([data-theme="dark"]) .simplex-table thead th {
+  color: #fffdf8;
+  background: #294b40;
+}
+
+:root:not([data-theme="dark"]) .simplex-table tbody th {
+  color: var(--ink);
+}
+
+:root:not([data-theme="dark"]) .simplex-table td {
+  color: #414a42;
+  background-color: #fffdf9;
+}
+
+/* Typographie secondaire : lisibilité accrue sans alourdir l'interface. */
+:root:not([data-theme="dark"]) .mockup-home-description,
+:root:not([data-theme="dark"]) .mockup-feature-copy small,
+:root:not([data-theme="dark"]) .workspace-breadcrumb,
+:root:not([data-theme="dark"]) .card-footnote,
+:root:not([data-theme="dark"]) .result-empty-state p,
+:root:not([data-theme="dark"]) .simplex-explanation p,
+:root:not([data-theme="dark"]) .bnb-stat-row span {
+  color: #5f685f;
+}
+
+/* Les accents vert/ambre restent doux mais nettement visibles en thème clair. */
+:root:not([data-theme="dark"]) .mockup-feature-icon,
+:root:not([data-theme="dark"]) .feature-icon,
+:root:not([data-theme="dark"]) .builder-icon {
+  border: 1px solid #cfd9ce;
+}
+
+:root:not([data-theme="dark"]) .theme-toggle,
+:root:not([data-theme="dark"]) .icon-button {
+  border-color: #c9c2b4;
+  box-shadow: 0 2px 5px rgb(31 35 40 / 4%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-theme="dark"]) .workspace-nav-link,
+  :root:not([data-theme="dark"]) .feature-card,
+  :root:not([data-theme="dark"]) .mockup-feature,
+  :root:not([data-theme="dark"]) .icon-button,
+  :root:not([data-theme="dark"]) .theme-toggle {
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease,
+      box-shadow 160ms ease, transform 160ms ease;
+  }
+}
