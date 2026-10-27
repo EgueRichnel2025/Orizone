@@ -1,7 +1,11 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, X } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import {
+  clearStoredOptimizationProblem,
+  saveOptimizationProblem,
+} from "../utils/optimization-storage";
 
 import ObjectiveInput from "../components/problem-builder/ObjectiveInput";
 import ConstraintRow from "../components/problem-builder/ConstraintRow";
@@ -47,6 +51,7 @@ function resizeArray<T>(
 }
 
 function SolvePage() {
+  const navigate = useNavigate();
   const [direction, setDirection] = useState<OptimizationDirection>("max");
   const [variableCount, setVariableCount] = useState(2);
   const [constraintCount, setConstraintCount] = useState(2);
@@ -68,6 +73,7 @@ function SolvePage() {
   const [showErrorModal, setShowErrorModal] = useState(false);
 
   function clearValidation() {
+    clearStoredOptimizationProblem();
     setValidationErrors([]);
     setValidatedProblem(null);
     setShowSuccessModal(false);
@@ -219,6 +225,7 @@ function SolvePage() {
     });
 
     if (errors.length > 0) {
+      clearStoredOptimizationProblem();
       setValidationErrors(errors);
       setValidatedProblem(null);
       setShowSuccessModal(false);
@@ -253,6 +260,7 @@ function SolvePage() {
     };
 
     setValidationErrors([]);
+    saveOptimizationProblem(problem);
     setValidatedProblem(problem);
     // La fenêtre s'ouvre uniquement si toutes les vérifications sont passées.
     setShowErrorModal(false);
@@ -488,7 +496,10 @@ function SolvePage() {
             <button
               type="button"
               className="button button-primary modal-continue"
-              onClick={() => setShowSuccessModal(false)}
+              onClick={() => {
+                setShowSuccessModal(false);
+                navigate("/analysis");
+              }}
             >
               Compris, continuer
               <ArrowRight size={17} />
