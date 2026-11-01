@@ -1,0 +1,480 @@
+/* Interactive, computation-backed Branch & Bound workspace. */
+.bnb-live-page { display: grid; gap: 22px; }
+
+.bnb-live-problem-strip,
+.bnb-live-overall-status,
+.bnb-live-result-card,
+.bnb-live-detail-empty {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.bnb-live-problem-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 19px;
+}
+.bnb-live-problem-strip > div:first-child { display: grid; gap: 5px; min-width: 0; }
+.bnb-live-problem-strip strong { color: var(--text, var(--foreground, var(--ink, inherit))); font-size: 15px; overflow-wrap: anywhere; }
+.bnb-live-problem-meta { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+.bnb-live-problem-meta span,
+.bnb-live-phase-badge,
+.bnb-live-history-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 4px 8px;
+  color: var(--muted);
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.bnb-live-overall-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding: 12px 15px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.bnb-live-overall-status strong { color: var(--ink, inherit); }
+.bnb-live-overall-status.is-success { border-color: color-mix(in srgb, #3d8a63 38%, var(--border)); background: color-mix(in srgb, #3d8a63 8%, var(--surface)); }
+.bnb-live-overall-status.is-success svg { color: #3d9a69; }
+.bnb-live-overall-status.is-warning { border-color: color-mix(in srgb, var(--copper) 40%, var(--border)); background: color-mix(in srgb, var(--copper) 8%, var(--surface)); }
+.bnb-live-overall-status.is-infeasible { border-color: color-mix(in srgb, #b75c51 35%, var(--border)); background: color-mix(in srgb, #b75c51 7%, var(--surface)); }
+.bnb-live-overall-status.is-neutral { background: var(--surface-muted); }
+.bnb-live-overall-status span { flex: 1 1 300px; }
+
+.bnb-live-stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.bnb-live-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  padding: 13px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.bnb-live-stat-icon { display: grid; width: 32px; height: 32px; flex: 0 0 32px; place-items: center; color: var(--green); background: color-mix(in srgb, var(--green) 10%, var(--surface)); border-radius: 8px; }
+.bnb-live-stat-card div { display: grid; gap: 3px; min-width: 0; }
+.bnb-live-stat-card small { color: var(--muted); font-size: 10px; }
+.bnb-live-stat-card strong { color: var(--ink, inherit); font-size: 17px; font-variant-numeric: tabular-nums; }
+
+.bnb-live-result-card { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 15px; padding: 20px; }
+.bnb-live-result-icon { display: grid; width: 46px; height: 46px; place-items: center; color: var(--copper); background: color-mix(in srgb, var(--copper) 11%, var(--surface)); border: 1px solid color-mix(in srgb, var(--copper) 27%, var(--border)); border-radius: 10px; }
+.bnb-live-result-card.is-success .bnb-live-result-icon { color: #39865d; background: color-mix(in srgb, #39865d 10%, var(--surface)); border-color: color-mix(in srgb, #39865d 27%, var(--border)); }
+.bnb-live-result-card.is-infeasible .bnb-live-result-icon { color: #b75c51; background: color-mix(in srgb, #b75c51 9%, var(--surface)); border-color: color-mix(in srgb, #b75c51 27%, var(--border)); }
+.bnb-live-result-copy { min-width: 0; }
+.bnb-live-result-copy h2 { margin: 5px 0 7px; color: var(--ink, inherit); font-size: 19px; }
+.bnb-live-result-copy > p { max-width: 900px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.bnb-live-incumbent-objective { display: flex; align-items: baseline; flex-wrap: wrap; gap: 9px 13px; margin-top: 15px; }
+.bnb-live-incumbent-objective span { color: var(--muted); font-size: 11px; }
+.bnb-live-incumbent-objective strong { color: var(--green-deep); font-size: 27px; font-variant-numeric: tabular-nums; }
+.bnb-live-incumbent-objective small { color: var(--muted); font-size: 10px; }
+.bnb-live-incumbent-values { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+.bnb-live-incumbent-values span { padding: 6px 9px; color: var(--ink, inherit); background: var(--surface-muted); border: 1px solid var(--border); border-radius: 5px; font-family: var(--font-mono, monospace); font-size: 12px; }
+.bnb-live-incumbent-values b { color: var(--green-deep); }
+.bnb-live-result-copy .bnb-live-not-certified { display: flex; align-items: flex-start; gap: 7px; margin-top: 11px; color: var(--copper); font-size: 11px; }
+.bnb-live-not-certified svg { flex: 0 0 auto; margin-top: 1px; }
+
+.bnb-live-tree-card { min-width: 0; overflow: hidden; }
+.bnb-live-tree-instruction { margin: -8px 0 14px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.bnb-live-tree-scroll { width: 100%; overflow: auto; padding: 8px 2px 15px; border: 1px solid var(--border); border-radius: 8px; background: color-mix(in srgb, var(--surface-muted) 35%, var(--surface)); scrollbar-width: thin; }
+.bnb-live-tree-svg { display: block; max-width: none; overflow: visible; }
+.bnb-live-tree-edges path { fill: none; stroke: color-mix(in srgb, var(--muted) 55%, var(--border)); stroke-width: 1.7; stroke-linecap: round; }
+.bnb-live-tree-node { cursor: pointer; outline: none; }
+.bnb-live-tree-node rect { fill: var(--surface); stroke: var(--border); stroke-width: 1.5; transition: stroke 150ms ease, filter 150ms ease, fill 150ms ease; }
+.bnb-live-tree-node:hover rect { filter: drop-shadow(0 4px 7px color-mix(in srgb, var(--ink, #000) 10%, transparent)); }
+.bnb-live-tree-node:focus-visible rect { stroke: var(--copper); stroke-width: 3; }
+.bnb-live-tree-node.is-selected rect { stroke: var(--green); stroke-width: 3; fill: color-mix(in srgb, var(--green) 8%, var(--surface)); }
+.bnb-live-node-id { fill: var(--ink, currentColor); font-size: 12px; font-weight: 800; }
+.bnb-live-node-status { fill: var(--muted); font-size: 10px; font-weight: 700; }
+.bnb-live-node-bound { fill: var(--muted); font-size: 9px; }
+.bnb-live-tree-node.is-success rect,
+.bnb-live-tree-node.is-integer rect { stroke: color-mix(in srgb, #3d9566 62%, var(--border)); }
+.bnb-live-tree-node.is-integer .bnb-live-node-status { fill: #3d9566; }
+.bnb-live-tree-node.is-branched rect { stroke: color-mix(in srgb, var(--copper) 65%, var(--border)); }
+.bnb-live-tree-node.is-pruned rect,
+.bnb-live-tree-node.is-infeasible rect { fill: color-mix(in srgb, #b75c51 6%, var(--surface)); stroke: color-mix(in srgb, #b75c51 48%, var(--border)); }
+.bnb-live-tree-node.is-warning rect { stroke: var(--copper); stroke-dasharray: 4 3; }
+.bnb-live-tree-node.is-pending rect { stroke-dasharray: 4 3; }
+.bnb-live-no-tree { display: flex; min-height: 130px; align-items: center; justify-content: center; gap: 10px; color: var(--muted); font-size: 12px; }
+.bnb-live-legend { display: flex; flex-wrap: wrap; gap: 9px 16px; margin-top: 13px; }
+.bnb-live-legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; }
+.bnb-live-legend i { width: 9px; height: 9px; border: 1px solid var(--border); border-radius: 3px; background: var(--surface-muted); }
+.bnb-live-legend i.is-integer { background: #3d9566; border-color: #3d9566; }
+.bnb-live-legend i.is-branched { background: var(--copper); border-color: var(--copper); }
+.bnb-live-legend i.is-pruned,
+.bnb-live-legend i.is-infeasible { background: #b75c51; border-color: #b75c51; }
+.bnb-live-legend i.is-warning { background: color-mix(in srgb, var(--copper) 36%, var(--surface)); border-color: var(--copper); }
+.bnb-live-legend i.is-pending { border-style: dashed; }
+
+.bnb-live-status-badge { display: inline-flex; width: fit-content; align-items: center; padding: 5px 8px; color: var(--muted); background: var(--surface-muted); border: 1px solid var(--border); border-radius: 5px; font-size: 9px; font-weight: 750; }
+.bnb-live-status-badge.is-success { color: #3d9566; border-color: color-mix(in srgb, #3d9566 33%, var(--border)); background: color-mix(in srgb, #3d9566 8%, var(--surface)); }
+.bnb-live-status-badge.is-integer { color: #3d9566; }
+.bnb-live-status-badge.is-branched { color: var(--copper); }
+.bnb-live-status-badge.is-pruned,
+.bnb-live-status-badge.is-infeasible { color: #bd675c; }
+.bnb-live-status-badge.is-warning { color: var(--copper); }
+
+.bnb-live-detail-card { display: grid; gap: 15px; min-width: 0; }
+.bnb-live-detail-card .workspace-card-heading { align-items: flex-start; }
+.bnb-live-detail-card .workspace-card-heading h2 { margin: 5px 0 0; }
+.bnb-live-detail-card .workspace-card-heading h2 em { color: var(--muted); font-size: 0.78em; font-style: normal; }
+.bnb-live-branch-path,
+.bnb-live-added-constraint,
+.bnb-live-branch-decision,
+.bnb-live-relaxation-values,
+.bnb-live-pruning-reason,
+.bnb-live-child-list,
+.bnb-live-engine-notes,
+.bnb-live-root-note,
+.bnb-live-relaxation-pending {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface-muted) 45%, var(--surface));
+}
+.bnb-live-branch-path > strong,
+.bnb-live-child-list > strong { display: flex; align-items: center; gap: 7px; color: var(--ink, inherit); font-size: 11px; }
+.bnb-live-branch-path ol { display: flex; flex-wrap: wrap; gap: 7px 22px; margin: 10px 0 0; padding-left: 21px; }
+.bnb-live-branch-path li { color: var(--muted); font-size: 11px; }
+.bnb-live-branch-path code,
+.bnb-live-added-constraint strong { color: var(--green-deep); font-family: var(--font-mono, monospace); font-size: 12px; }
+.bnb-live-root-note { display: flex; align-items: flex-start; gap: 8px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.bnb-live-root-note svg { flex: 0 0 auto; color: var(--green); }
+.bnb-live-added-constraint { display: grid; gap: 5px; }
+.bnb-live-added-constraint span,
+.bnb-live-relaxation-summary span { color: var(--muted); font-size: 10px; }
+.bnb-live-branch-decision { background: color-mix(in srgb, var(--copper) 7%, var(--surface)); border-color: color-mix(in srgb, var(--copper) 25%, var(--border)); }
+.bnb-live-branch-decision p { margin: 7px 0 0; color: var(--muted); font-size: 11px; line-height: 1.65; }
+.bnb-live-branch-decision strong { color: var(--ink, inherit); }
+
+.bnb-live-relaxation-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.bnb-live-relaxation-summary > div { display: grid; align-content: start; gap: 5px; padding: 11px; border: 1px solid var(--border); border-radius: 7px; }
+.bnb-live-relaxation-summary strong { color: var(--ink, inherit); font-size: 13px; overflow-wrap: anywhere; }
+.bnb-live-relaxation-values { display: grid; gap: 8px; }
+.bnb-live-relaxation-values > strong { color: var(--ink, inherit); font-size: 11px; }
+.bnb-live-relaxation-values > div { display: flex; flex-wrap: wrap; gap: 7px; }
+.bnb-live-relaxation-values span { padding: 6px 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 5px; color: var(--muted); font-family: var(--font-mono, monospace); font-size: 11px; }
+.bnb-live-relaxation-values b { color: var(--green-deep); }
+.bnb-live-relaxation-message { margin: -4px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.bnb-live-bound-note { display: flex; align-items: center; gap: 7px; margin: 0; color: var(--muted); font-size: 11px; }
+.bnb-live-bound-note svg { color: var(--copper); }
+.bnb-live-bound-note strong { color: var(--ink, inherit); }
+
+.bnb-live-relaxation-history { display: grid; gap: 13px; min-width: 0; }
+.bnb-live-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bnb-live-history-heading h3 { margin: 4px 0 0; color: var(--ink, inherit); font-size: 16px; }
+.bnb-live-simplex-history { display: grid; gap: 13px; }
+.bnb-live-simplex-step { display: grid; gap: 11px; padding: 13px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.bnb-live-simplex-step-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bnb-live-simplex-step-heading h4 { margin: 4px 0 0; color: var(--ink, inherit); font-size: 13px; }
+.bnb-live-table-scroll { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; }
+.bnb-live-simplex-table { width: 100%; min-width: 560px; border-collapse: separate; border-spacing: 0; font-family: var(--font-mono, monospace); font-size: 11px; font-variant-numeric: tabular-nums; }
+.bnb-live-simplex-table th,
+.bnb-live-simplex-table td { padding: 8px 9px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+.bnb-live-simplex-table tr > :first-child { position: sticky; left: 0; z-index: 1; text-align: left; background: var(--surface-muted); }
+.bnb-live-simplex-table thead th { color: var(--muted); background: var(--surface-muted); font-family: var(--font-body, inherit); font-size: 10px; }
+.bnb-live-simplex-table thead th small { display: block; color: var(--copper); font-size: 8px; font-weight: 700; }
+.bnb-live-simplex-table tbody th { color: var(--green-deep); font-weight: 750; }
+.bnb-live-simplex-table td { color: var(--ink, inherit); }
+.bnb-live-simplex-table td.is-entering,
+.bnb-live-simplex-table thead th.is-entering { background: color-mix(in srgb, var(--green) 11%, var(--surface)); }
+.bnb-live-simplex-table tbody tr.is-leaving > th,
+.bnb-live-simplex-table tbody tr.is-leaving > td { background: color-mix(in srgb, var(--copper) 8%, var(--surface)); }
+.bnb-live-simplex-table tbody td.is-pivot { position: relative; background: color-mix(in srgb, var(--copper) 35%, var(--surface)) !important; color: var(--ink, #171717); font-weight: 850; outline: 2px solid var(--copper); outline-offset: -2px; }
+.bnb-live-simplex-table tfoot th,
+.bnb-live-simplex-table tfoot td { color: var(--green-deep); background: color-mix(in srgb, var(--green) 7%, var(--surface)); font-weight: 750; }
+.bnb-live-pivot-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.bnb-live-pivot-grid > div { display: grid; gap: 4px; min-width: 0; }
+.bnb-live-pivot-grid span { color: var(--muted); font-size: 9px; }
+.bnb-live-pivot-grid strong { color: var(--ink, inherit); font-family: var(--font-mono, monospace); font-size: 11px; overflow-wrap: anywhere; }
+.bnb-live-ratio-tests { display: grid; gap: 7px; }
+.bnb-live-ratio-tests > strong { color: var(--muted); font-size: 10px; }
+.bnb-live-ratio-tests > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.bnb-live-ratio-tests span { padding: 5px 7px; color: var(--muted); background: var(--surface-muted); border: 1px solid var(--border); border-radius: 4px; font-size: 9px; }
+.bnb-live-iteration-explanation { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 10px 11px; color: var(--muted); background: color-mix(in srgb, var(--green) 6%, var(--surface)); border-left: 2px solid var(--green); font-size: 10px; line-height: 1.65; }
+.bnb-live-iteration-explanation svg { flex: 0 0 auto; margin-top: 1px; color: var(--green); }
+.bnb-live-no-iterations { margin: 0; color: var(--muted); font-size: 11px; }
+.bnb-live-pruning-reason { display: flex; align-items: flex-start; gap: 9px; background: color-mix(in srgb, var(--copper) 7%, var(--surface)); border-color: color-mix(in srgb, var(--copper) 28%, var(--border)); }
+.bnb-live-pruning-reason > svg { flex: 0 0 auto; color: var(--copper); }
+.bnb-live-pruning-reason strong { color: var(--ink, inherit); font-size: 11px; }
+.bnb-live-pruning-reason p { margin: 4px 0 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.bnb-live-child-list { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.bnb-live-child-list > div { display: flex; flex-wrap: wrap; gap: 7px; }
+.bnb-live-child-list span { padding: 4px 7px; color: var(--green-deep); background: color-mix(in srgb, var(--green) 9%, var(--surface)); border: 1px solid color-mix(in srgb, var(--green) 23%, var(--border)); border-radius: 5px; font-family: var(--font-mono, monospace); font-size: 10px; }
+.bnb-live-engine-notes { display: grid; gap: 6px; }
+.bnb-live-engine-notes strong { color: var(--ink, inherit); font-size: 10px; }
+.bnb-live-engine-notes p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.bnb-live-global-notes { margin: 0; }
+.bnb-live-relaxation-pending { display: flex; align-items: flex-start; gap: 10px; }
+.bnb-live-relaxation-pending > svg { flex: 0 0 auto; color: var(--copper); }
+.bnb-live-relaxation-pending strong { color: var(--ink, inherit); font-size: 11px; }
+.bnb-live-relaxation-pending p { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.bnb-live-detail-empty { display: flex; align-items: center; gap: 10px; padding: 16px; color: var(--muted); }
+.bnb-live-detail-empty p { margin: 0; font-size: 11px; }
+.bnb-live-empty-state { display: grid; justify-items: start; gap: 10px; padding: 24px; }
+.bnb-live-empty-state h2 { margin: 0; color: var(--ink, inherit); font-size: 19px; }
+.bnb-live-empty-state p { max-width: 600px; margin: 0 0 4px; color: var(--muted); font-size: 12px; line-height: 1.65; }
+
+@media (max-width: 760px) {
+  .bnb-live-problem-strip { align-items: flex-start; flex-direction: column; }
+  .bnb-live-problem-meta { justify-content: flex-start; }
+  .bnb-live-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bnb-live-relaxation-summary { grid-template-columns: 1fr; }
+  .bnb-live-result-card { grid-template-columns: 38px minmax(0, 1fr); padding: 15px; }
+  .bnb-live-result-icon { width: 38px; height: 38px; }
+}
+@media (max-width: 520px) {
+  .bnb-live-stat-grid { grid-template-columns: 1fr 1fr; gap: 7px; }
+  .bnb-live-stat-card { gap: 7px; padding: 10px; }
+  .bnb-live-stat-icon { width: 27px; height: 27px; flex-basis: 27px; }
+  .bnb-live-stat-card strong { font-size: 15px; }
+  .bnb-live-pivot-grid { grid-template-columns: 1fr; }
+  .bnb-live-simplex-step { padding: 9px; }
+  .bnb-live-history-heading { align-items: flex-start; flex-direction: column; }
+}
+
+
+
+/* ORIZONE RESPONSIVE REFINEMENT - NOV 2026 */
+
+/* Espacement et hiérarchie de la carte de l'arbre */
+.bnb-live-page {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  gap: clamp(16px, 2.2vw, 24px);
+}
+
+.bnb-live-page > *,
+.bnb-live-page .workspace-card {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bnb-live-tree-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(14px, 2vw, 19px);
+  padding: clamp(16px, 2.2vw, 24px);
+}
+
+.bnb-live-tree-card > .workspace-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 13px 20px;
+  margin: 0;
+}
+
+.bnb-live-tree-card > .workspace-card-heading > div:first-child {
+  display: grid;
+  gap: 7px;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.bnb-live-tree-card > .workspace-card-heading h2 {
+  margin: 0;
+  font-size: clamp(17px, 1.6vw, 21px);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.bnb-live-tree-card > .workspace-card-heading > .bnb-live-status-badge {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  margin: 2px 0 0;
+  white-space: nowrap;
+}
+
+/* Instructions séparées du titre et du compteur */
+.bnb-live-tree-instruction {
+  max-width: 75ch;
+  margin: 0;
+  padding: 12px 15px;
+  border-left: 3px solid var(--green);
+  border-radius: 0 7px 7px 0;
+  background: color-mix(in srgb, var(--green) 6%, var(--surface));
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.75;
+}
+
+/* Arbre : conserver sa lisibilité et permettre le défilement horizontal */
+.bnb-live-tree-scroll {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 12px 8px 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+}
+
+.bnb-live-tree-svg {
+  display: block;
+  max-width: none;
+  overflow: visible;
+}
+
+.bnb-live-tree-card > .bnb-live-legend {
+  margin: 0;
+  padding-top: 3px;
+  gap: 10px 18px;
+}
+
+.bnb-live-tree-card > .bnb-live-legend span {
+  line-height: 1.5;
+}
+
+/* Éviter les débordements des formules et tableaux */
+.bnb-live-detail-card,
+.bnb-live-simplex-step,
+.bnb-live-relaxation-history,
+.bnb-live-history-heading {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bnb-live-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Tablettes */
+@media (max-width: 900px) {
+  .bnb-live-page {
+    gap: 18px;
+  }
+
+  .bnb-live-relaxation-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Smartphones */
+@media (max-width: 760px) {
+  .bnb-live-tree-card {
+    gap: 14px;
+    padding: 15px;
+  }
+
+  .bnb-live-tree-card > .workspace-card-heading {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .bnb-live-tree-instruction {
+    max-width: none;
+    padding: 11px 12px;
+    font-size: 10.5px;
+  }
+
+  .bnb-live-tree-scroll {
+    padding: 10px 6px 13px;
+  }
+
+  .bnb-live-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bnb-live-relaxation-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bnb-live-pivot-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bnb-live-history-heading,
+  .bnb-live-simplex-step-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+/* Petits smartphones */
+@media (max-width: 520px) {
+  .bnb-live-page {
+    gap: 15px;
+  }
+
+  .bnb-live-tree-card {
+    gap: 13px;
+    padding: 13px;
+  }
+
+  .bnb-live-tree-card > .workspace-card-heading {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .bnb-live-tree-card > .workspace-card-heading > .bnb-live-status-badge {
+    align-self: flex-start;
+    margin: 0;
+  }
+
+  .bnb-live-tree-instruction {
+    padding: 10px 11px;
+    font-size: 10px;
+    line-height: 1.7;
+  }
+
+  .bnb-live-tree-scroll {
+    border-radius: 7px;
+  }
+
+  .bnb-live-legend {
+    gap: 9px 12px;
+  }
+
+  .bnb-live-legend span {
+    font-size: 9px;
+  }
+
+  .bnb-live-stat-card {
+    gap: 7px;
+    padding: 10px;
+  }
+
+  .bnb-live-relaxation-summary,
+  .bnb-live-pivot-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bnb-live-result-copy h2 {
+    font-size: 17px;
+    line-height: 1.4;
+  }
+}
+
+/* Écrans très étroits */
+@media (max-width: 380px) {
+  .bnb-live-stat-grid,
+  .bnb-live-problem-meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bnb-live-result-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
