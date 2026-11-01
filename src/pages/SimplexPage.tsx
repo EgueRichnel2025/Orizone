@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   ArrowLeft,
@@ -16,7 +16,8 @@ import {
 import { Link } from "react-router";
 
 import { solveSimplex, type SimplexIteration, type SimplexResult } from "../engine/simplex";
-import { loadOptimizationProblem } from "../utils/optimization-storage";
+import { getOrCreateOptimizationRunId, loadOptimizationProblem } from "../utils/optimization-storage";
+import { saveResolutionHistory } from "../utils/resolution-history";
 import "../styles/algorithm-pages.css";
 import "../styles/simplex-live.css";
 
@@ -392,6 +393,19 @@ function ResultSummary({ result }: { result: SimplexResult }) {
 export default function SimplexPage() {
   const problem = useMemo(() => loadOptimizationProblem(), []);
   const result = useMemo(() => problem ? solveSimplex(problem) : null, [problem]);
+
+  useEffect(() => {
+    if (!problem || !result) return;
+    const runId = getOrCreateOptimizationRunId();
+    void saveResolutionHistory({
+      id: `${runId}:simplex`,
+      runId,
+      method: "simplex",
+      createdAt: new Date().toISOString(),
+      problem,
+      result,
+    }).catch((error: unknown) => console.error("Orizone : sauvegarde de la résolution Simplexe impossible.", error));
+  }, [problem, result]);
   const [activeIterationIndex, setActiveIterationIndex] = useState(0);
   const [showAllTables, setShowAllTables] = useState(true);
 

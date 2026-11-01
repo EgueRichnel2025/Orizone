@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -24,7 +24,8 @@ import type {
 } from "../engine/branch-bound";
 import type { SimplexIteration } from "../engine/simplex";
 import type { OptimizationProblem } from "../types/optimization";
-import { loadOptimizationProblem } from "../utils/optimization-storage";
+import { getOrCreateOptimizationRunId, loadOptimizationProblem } from "../utils/optimization-storage";
+import { saveResolutionHistory } from "../utils/resolution-history";
 import "../styles/algorithm-pages.css";
 import "../styles/branch-bound-live.css";
 
@@ -526,6 +527,19 @@ export default function BranchBoundPage() {
   const [problem] = useState<OptimizationProblem | null>(() => loadOptimizationProblem());
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const result = useMemo(() => (problem ? solveBranchBound(problem) : null), [problem]);
+
+  useEffect(() => {
+    if (!problem || !result) return;
+    const runId = getOrCreateOptimizationRunId();
+    void saveResolutionHistory({
+      id: `${runId}:branch-bound`,
+      runId,
+      method: "branch-bound",
+      createdAt: new Date().toISOString(),
+      problem,
+      result,
+    }).catch((error: unknown) => console.error("Orizone : sauvegarde de la résolution Branch & Bound impossible.", error));
+  }, [problem, result]);
   const selectedNode = result?.nodes.find((node) => node.id === selectedNodeId)
     ?? result?.nodes.find((node) => node.id === result.rootId)
     ?? null;

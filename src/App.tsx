@@ -1,4 +1,4 @@
-import { BookOpen, History, Network, Settings2 } from "lucide-react";
+import { BookOpen, Network, Settings2 } from "lucide-react";
 import { Route, Routes } from "react-router";
 
 import WorkspaceLayout from "./layouts/WorkspaceLayout";
@@ -7,6 +7,8 @@ import SolvePage from "./pages/SolvePage";
 import AnalysisPage from "./pages/AnalysisPage";
 import SimplexPage from "./pages/SimplexPage";
 import BranchBoundPage from "./pages/BranchBoundPage";
+import HistoryPage from "./pages/HistoryPage";
+import HistoryDetailPage from "./pages/HistoryDetailPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
 
 /**
@@ -44,17 +46,8 @@ function App() {
             />
           }
         />
-        <Route
-          path="history"
-          element={
-            <PlaceholderPage
-              icon={<History size={25} />}
-              eyebrow="Historique"
-              title="Vos résolutions."
-              description="Retrouvez ici les problèmes que vous aurez enregistrés. L’historique sera connecté au stockage dans une phase ultérieure."
-            />
-          }
-        />
+        <Route path="history" element={<HistoryPage />} />
+        <Route path="history/:id" element={<HistoryDetailPage />} />
         <Route
           path="settings"
           element={
