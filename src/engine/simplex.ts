@@ -457,8 +457,17 @@ function optimizeTableau(
   tolerance: number,
 ): OptimizeOutcome {
   let pivots = 0;
+  let useBlandFallback = false;
+  const visitedBases = new Set<string>();
 
   while (true) {
+    const basisSignature = basis.join(",");
+    if (visitedBases.has(basisSignature)) {
+      useBlandFallback = true;
+    } else {
+      visitedBases.add(basisSignature);
+    }
+
     const reducedCosts = calculateReducedCosts(
       tableau,
       basis,
@@ -468,10 +477,27 @@ function optimizeTableau(
     );
 
     const basicSet = new Set(basis);
-    // Bland's rule: choose the first eligible non-basic column.
-    const enteringIndex = columns.findIndex(
-      (_, index) => !basicSet.has(index) && reducedCosts[index] > tolerance,
-    );
+
+    // Règle du cours : choisir le coût réduit positif le plus élevé.
+    // En cas d'égalité, le premier indice est conservé.
+    // En cas de cycle détecté, basculer sur la règle anti-cyclage de Bland.
+    const eligibleColumns = columns
+      .map((_, index) => index)
+      .filter((index) => !basicSet.has(index) && reducedCosts[index] > tolerance);
+
+    let enteringIndex = -1;
+
+    if (eligibleColumns.length > 0) {
+      enteringIndex = eligibleColumns[0];
+
+      if (!useBlandFallback) {
+        for (const candidate of eligibleColumns.slice(1)) {
+          if (reducedCosts[candidate] > reducedCosts[enteringIndex] + tolerance) {
+            enteringIndex = candidate;
+          }
+        }
+      }
+    }
 
     if (enteringIndex < 0) {
       appendSnapshot(
@@ -561,7 +587,9 @@ function optimizeTableau(
       enteringIndex,
       leavingRow,
       ratios,
-      `La variable entrante est ${columns[enteringIndex].name}. Le test des rapports positifs fait sortir ${leavingVariable} ; le pivot vaut ${cleanNumber(pivotValue, tolerance)}.`,
+      `${useBlandFallback
+        ? "Un cycle de base a été détecté : le départage anti-cyclage de Bland est activé."
+        : `Le coût réduit positif maximal est ${cleanNumber(reducedCosts[enteringIndex], tolerance)} pour ${columns[enteringIndex].name}. Cette variable entre dans la base.`} Le test des rapports positifs fait sortir ${leavingVariable} ; le pivot vaut ${cleanNumber(pivotValue, tolerance)}.`,
     );
 
     pivotTableau(tableau, basis, leavingRow, enteringIndex, tolerance);
@@ -734,78 +762,100 @@ export function solveSimplex(
     let basis = built.basis;
     let columns = built.columns;
 
-    const phaseOneCosts = columns.map((column) => column.kind === "artificial" ? -1 : 0);
-    const phaseOne = optimizeTableau(
-      tableau,
-      basis,
-      columns,
-      phaseOneCosts,
-      1,
-      0,
-      iterations,
-      maxIterations,
-      tolerance,
-    );
-    totalPivots += phaseOne.pivots;
-
-    if (phaseOne.status === "iteration_limit") {
-      return {
-        status: "iteration_limit",
-        message: "La limite d’itérations a été atteinte pendant la phase I ; la faisabilité n’a pas pu être établie.",
-        direction: problem.direction,
-        iterations,
-        totalPivots,
-        notes,
-      };
-    }
-
-    if (phaseOne.status === "unbounded") {
-      return {
-        status: "numerical_issue",
-        message: "La phase I a rencontré un comportement inattendu. Vérifiez les coefficients et la tolérance numérique.",
-        direction: problem.direction,
-        iterations,
-        totalPivots,
-        notes,
-      };
-    }
-
-    const phaseOneObjective = currentObjectiveValue(tableau, basis, phaseOneCosts, 0);
-    if (phaseOneObjective < -tolerance * 10) {
-      return {
-        status: "infeasible",
-        message: "Le modèle ne possède pas de solution réalisable : la phase I n’a pas pu annuler toutes les variables artificielles.",
-        direction: problem.direction,
-        iterations,
-        totalPivots,
-        notes,
-      };
-    }
-
-    const cleaned = removeArtificialBasics(
-      tableau,
-      basis,
-      columns,
-      phaseOneCosts,
-      iterations,
-      notes,
-      tolerance,
+    // La phase I n'est utile que si le tableau contient des variables artificielles.
+    // Sans elles, les variables d'écart fournissent déjà une base de départ réalisable.
+    const hasArtificialVariables = columns.some(
+      (column) => column.kind === "artificial",
     );
 
-    if (!cleaned) {
-      return {
-        status: "numerical_issue",
-        message: "Une variable artificielle reste non nulle après la phase I. Le modèle doit être vérifié numériquement.",
-        direction: problem.direction,
-        iterations,
-        totalPivots,
-        notes,
-      };
-    }
+    if (hasArtificialVariables) {
+      const phaseOneCosts = columns.map(
+        (column) => column.kind === "artificial" ? -1 : 0,
+      );
 
-    tableau = cleaned.tableau;
-    basis = cleaned.basis;
-    columns = cleaned.columns;
+      const phaseOne = optimizeTableau(
+        tableau,
+        basis,
+        columns,
+        phaseOneCosts,
+        1,
+        0,
+        iterations,
+        maxIterations,
+        tolerance,
+      );
+
+      totalPivots += phaseOne.pivots;
+
+      if (phaseOne.status === "iteration_limit") {
+        return {
+          status: "iteration_limit",
+          message: "La limite d’itérations a été atteinte pendant la phase I ; la faisabilité n’a pas pu être établie.",
+          direction: problem.direction,
+          iterations,
+          totalPivots,
+          notes,
+        };
+      }
+
+      if (phaseOne.status === "unbounded") {
+        return {
+          status: "numerical_issue",
+          message: "La phase I a rencontré un comportement inattendu. Vérifiez les coefficients et la tolérance numérique.",
+          direction: problem.direction,
+          iterations,
+          totalPivots,
+          notes,
+        };
+      }
+
+      const phaseOneObjective = currentObjectiveValue(
+        tableau,
+        basis,
+        phaseOneCosts,
+        0,
+      );
+
+      if (phaseOneObjective < -tolerance * 10) {
+        return {
+          status: "infeasible",
+          message: "Le modèle ne possède pas de solution réalisable : la phase I n’a pas pu annuler toutes les variables artificielles.",
+          direction: problem.direction,
+          iterations,
+          totalPivots,
+          notes,
+        };
+      }
+
+      const cleaned = removeArtificialBasics(
+        tableau,
+        basis,
+        columns,
+        phaseOneCosts,
+        iterations,
+        notes,
+        tolerance,
+      );
+
+      if (!cleaned) {
+        return {
+          status: "numerical_issue",
+          message: "Une variable artificielle reste non nulle après la phase I. Le modèle doit être vérifié numériquement.",
+          direction: problem.direction,
+          iterations,
+          totalPivots,
+          notes,
+        };
+      }
+
+      tableau = cleaned.tableau;
+      basis = cleaned.basis;
+      columns = cleaned.columns;
+    } else {
+      notes.push(
+        "La vérification préalable n'était pas nécessaire : une solution de départ respectant les contraintes était déjà disponible.",
+      );
+    }
 
     const phaseTwoCosts = columns.map((column) => column.phaseTwoCost);
     const phaseTwo = optimizeTableau(

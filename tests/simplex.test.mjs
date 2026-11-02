@@ -35,10 +35,23 @@ test("maximise 3x1 + 5x2 et retrouver Z = 21", () => {
   const result = solveSimplex(problem);
   assert.equal(result.status, "optimal", result.message);
   assert.equal(result.objectiveValue, 21);
+  assert.ok(
+    result.iterations.every((step) => step.phase === 2),
+    "Un problème avec une base de départ déjà réalisable ne doit pas lancer la phase I.",
+  );
   assert.ok(Math.abs((result.variableValues?.x1 ?? NaN) - 2) < 1e-8);
   assert.ok(Math.abs((result.variableValues?.x2 ?? NaN) - 3) < 1e-8);
   assert.ok(result.iterations.length > 0);
   assert.ok(result.iterations.some((step) => step.phase === 2 && step.enteringVariable));
+  const firstPivot = result.iterations.find(
+    (step) => step.phase === 2 && step.enteringVariable !== null,
+  );
+
+  assert.equal(
+    firstPivot?.enteringVariable,
+    "x2",
+    "Le Simplexe doit choisir le cout reduit positif le plus eleve : 5 pour x2.",
+  );
 });
 
 test("gère une minimisation avec une contrainte supérieure ou égale", () => {
