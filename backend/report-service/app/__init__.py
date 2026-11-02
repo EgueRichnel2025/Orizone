@@ -1,0 +1,1 @@
+"""Orizone LaTeX report service."""

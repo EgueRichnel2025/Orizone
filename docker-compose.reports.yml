@@ -1,0 +1,11 @@
+services:
+  orizone-report-service:
+    build:
+      context: ./backend/report-service
+    ports:
+      - "8002:8000"
+    environment:
+      ORIZONE_CORS_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173"
+      LATEX_COMPILE_TIMEOUT_SECONDS: "60"
+    init: true
+    restart: unless-stopped
