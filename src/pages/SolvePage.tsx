@@ -33,8 +33,8 @@ function createConstraint(variableCount: number): ConstraintDraft {
 function createVariable(): VariableDraft {
   return {
     type: "continuous",
-    // Les deux bornes sont facultatives et restent vides par défaut.
-    lowerBound: "",
+    // Par défaut, les variables sont positives ou nulles.
+    lowerBound: 0,
     upperBound: "",
   };
 }
@@ -168,7 +168,7 @@ function SolvePage() {
           return { type, lowerBound: 0, upperBound: 1 };
         }
         if (variable.type === "binary") {
-          return { type, lowerBound: "", upperBound: "" };
+          return { type, lowerBound: 0, upperBound: "" };
         }
         return { ...variable, type };
       }),

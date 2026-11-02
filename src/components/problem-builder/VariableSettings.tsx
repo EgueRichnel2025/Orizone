@@ -53,8 +53,10 @@ function VariableSettings({
           <h2>Nature des variables</h2>
 
           <p>
-            Indiquez le domaine de chaque variable
-            et ses éventuelles bornes.
+            Par défaut, chaque variable est positive ou nulle (x ≥ 0).
+            Vous pouvez modifier cette limite si votre problème l'exige.
+            Laissez la borne inférieure vide uniquement si la variable
+            peut aussi prendre des valeurs négatives.
           </p>
         </div>
       </header>
