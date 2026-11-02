@@ -23,6 +23,7 @@ import type {
   BranchBoundStatus,
 } from "../engine/branch-bound";
 import type { SimplexIteration } from "../engine/simplex";
+import { SimplexTableau } from "../components/algorithm/SimplexTableau";
 import type { OptimizationProblem } from "../types/optimization";
 import { getOrCreateOptimizationRunId, loadOptimizationProblem } from "../utils/optimization-storage";
 import { saveResolutionHistory } from "../utils/resolution-history";
@@ -93,11 +94,55 @@ function objectiveExpression(problem: OptimizationProblem): string {
   return terms.join("") || "0";
 }
 
+const TREE_NODE_WIDTH = 230;
+const TREE_LEAF_GAP = 310;
+const TREE_LEVEL_GAP = 96;
+
+function getNodeVariableValues(
+  node: BranchBoundNode,
+): Array<[string, number]> {
+  if (
+    node.relaxation?.status !== "optimal" ||
+    !node.relaxation.variableValues
+  ) {
+    return [];
+  }
+
+  return Object.entries(node.relaxation.variableValues);
+}
+
+function getNodeCardHeight(node: BranchBoundNode): number {
+  const variableCount = getNodeVariableValues(node).length;
+  return 94 + Math.max(variableCount, 1) * 19;
+}
+
 function buildTreeLayout(nodes: BranchBoundNode[]): TreeLayout {
-  if (nodes.length === 0) return { points: [], width: 720, height: 190 };
+  if (nodes.length === 0) {
+    return { points: [], width: 760, height: 210 };
+  }
 
   const byId = new Map(nodes.map((node) => [node.id, node]));
   const positions = new Map<string, { x: number; y: number }>();
+
+  const maxDepth = Math.max(...nodes.map((node) => node.depth));
+  const levelHeights = Array.from(
+    { length: maxDepth + 1 },
+    (_, depth) => Math.max(
+      110,
+      ...nodes
+        .filter((node) => node.depth === depth)
+        .map(getNodeCardHeight),
+    ),
+  );
+
+  const levelCenters: number[] = [];
+  let nextTop = 42;
+
+  levelHeights.forEach((height, depth) => {
+    levelCenters[depth] = nextTop + height / 2;
+    nextTop += height + TREE_LEVEL_GAP;
+  });
+
   let nextLeaf = 0;
 
   const assign = (node: BranchBoundNode): number => {
@@ -106,46 +151,78 @@ function buildTreeLayout(nodes: BranchBoundNode[]): TreeLayout {
       .filter((child): child is BranchBoundNode => child !== undefined);
 
     let x: number;
+
     if (children.length === 0) {
-      x = 105 + nextLeaf * 210;
+      x = 160 + nextLeaf * TREE_LEAF_GAP;
       nextLeaf += 1;
     } else {
       const childPositions = children.map(assign);
-      x = childPositions.reduce((sum, value) => sum + value, 0) / childPositions.length;
+
+      x = childPositions.reduce(
+        (sum, value) => sum + value,
+        0,
+      ) / childPositions.length;
     }
 
-    positions.set(node.id, { x, y: 58 + node.depth * 144 });
+    positions.set(node.id, {
+      x,
+      y: levelCenters[node.depth] ?? 80,
+    });
+
     return x;
   };
 
   const root = nodes.find((node) => node.parentId === null) ?? nodes[0];
   assign(root);
 
-  // Defensive fallback: keep disconnected nodes visible if an incomplete tree is returned.
+  // Afficher aussi les nœuds éventuellement non reliés.
   nodes.forEach((node) => {
     if (!positions.has(node.id)) {
-      positions.set(node.id, { x: 105 + nextLeaf * 210, y: 58 + node.depth * 144 });
+      positions.set(node.id, {
+        x: 160 + nextLeaf * TREE_LEAF_GAP,
+        y: levelCenters[node.depth] ?? 80,
+      });
+
       nextLeaf += 1;
     }
   });
 
   const points = nodes.map((node) => {
-    const point = positions.get(node.id) ?? { x: 105, y: 58 };
-    return { node, ...point };
+    const position = positions.get(node.id) ?? { x: 160, y: 80 };
+
+    return {
+      node,
+      ...position,
+    };
   });
-  const maxDepth = Math.max(...nodes.map((node) => node.depth));
+
   return {
     points,
-    width: Math.max(720, nextLeaf * 210 + 110),
-    height: Math.max(190, 58 + maxDepth * 144 + 112),
+    width: Math.max(760, nextLeaf * TREE_LEAF_GAP + 170),
+    height: Math.max(210, nextTop - TREE_LEVEL_GAP + 45),
   };
 }
 
 function nodeSecondaryLabel(node: BranchBoundNode): string {
-  if (node.bound !== null) return `Borne : ${numberText(node.bound)}`;
-  if (node.addedConstraint) return node.addedConstraint.label;
-  if (node.status === "pending") return "Relaxation en attente";
-  return "Aucune borne disponible";
+  const values = getNodeVariableValues(node);
+  const objective = node.relaxation?.objectiveValue;
+
+  if (values.length > 0 && objective !== undefined) {
+    return [
+      ...values.map(([name, value]) => `${name} = ${numberText(value)}`),
+      `Z = ${numberText(objective)}`,
+    ].join(", ");
+  }
+
+  if (node.addedConstraint) {
+    return node.addedConstraint.label;
+  }
+
+  if (node.status === "pending") {
+    return "Résolution en attente";
+  }
+
+  return NODE_STATUS_META[node.status].label;
 }
 
 function TreeView({
@@ -157,11 +234,22 @@ function TreeView({
   selectedNodeId: string | null;
   onSelect: (nodeId: string) => void;
 }) {
-  const layout = useMemo(() => buildTreeLayout(result.nodes), [result.nodes]);
-  const pointsById = new Map(layout.points.map((point) => [point.node.id, point]));
+  const layout = useMemo(
+    () => buildTreeLayout(result.nodes),
+    [result.nodes],
+  );
+
+  const pointsById = new Map(
+    layout.points.map((point) => [point.node.id, point]),
+  );
 
   return (
-    <div className="bnb-live-tree-scroll" role="region" aria-label="Arbre Branch and Bound, défilement horizontal possible" tabIndex={0}>
+    <div
+      className="bnb-live-tree-scroll"
+      role="region"
+      aria-label="Arbre Branch and Bound, défilement horizontal possible"
+      tabIndex={0}
+    >
       {layout.points.length > 0 ? (
         <svg
           className="bnb-live-tree-svg"
@@ -171,47 +259,173 @@ function TreeView({
           role="group"
           aria-label="Arbre de recherche interactif"
         >
-          <g className="bnb-live-tree-edges" aria-hidden="true">
-            {layout.points.map(({ node, x, y }) => node.children.map((childId) => {
-              const child = pointsById.get(childId);
-              if (!child) return null;
-              const startY = y + 38;
-              const endY = child.y - 38;
-              const middleY = (startY + endY) / 2;
-              return (
-                <path
-                  key={`${node.id}-${childId}`}
-                  d={`M ${x} ${startY} C ${x} ${middleY}, ${child.x} ${middleY}, ${child.x} ${endY}`}
-                />
-              );
-            }))}
+          {/* Liaisons entre les nœuds */}
+          <g className="bnb-live-tree-edges">
+            {layout.points.map(({ node, x, y }) =>
+              node.children.map((childId) => {
+                const child = pointsById.get(childId);
+
+                if (!child) return null;
+
+                const parentBottom = y + getNodeCardHeight(node) / 2;
+                const childTop =
+                  child.y - getNodeCardHeight(child.node) / 2;
+
+                const middleY = (parentBottom + childTop) / 2;
+                const middleX = (x + child.x) / 2;
+                const constraint = child.node.addedConstraint;
+
+                const label = constraint?.label ?? "";
+                const labelWidth = Math.min(
+                  190,
+                  Math.max(82, label.length * 7 + 22),
+                );
+
+                return (
+                  <g key={`${node.id}-${childId}`}>
+                    <path
+                      d={`M ${x} ${parentBottom} C ${x} ${middleY}, ${child.x} ${middleY}, ${child.x} ${childTop}`}
+                    />
+
+                    {constraint && (
+                      <g
+                        className={`bnb-live-edge-label ${
+                          constraint.operator === "<="
+                            ? "is-left-branch"
+                            : "is-right-branch"
+                        }`}
+                        transform={`translate(${middleX}, ${middleY})`}
+                        role="img"
+                        aria-label={`Contrainte de branchement : ${label}`}
+                      >
+                        <rect
+                          x={-labelWidth / 2}
+                          y={-14}
+                          width={labelWidth}
+                          height="28"
+                          rx="7"
+                        />
+                        <text
+                          x="0"
+                          y="4"
+                          textAnchor="middle"
+                        >
+                          {label}
+                        </text>
+                      </g>
+                    )}
+                  </g>
+                );
+              }),
+            )}
           </g>
 
+          {/* Contenu des nœuds */}
           {layout.points.map(({ node, x, y }) => {
             const meta = NODE_STATUS_META[node.status];
             const selected = selectedNodeId === node.id;
+
+            const variableValues = getNodeVariableValues(node);
+            const objectiveValue = node.relaxation?.objectiveValue;
+
+            const hasObjective =
+              node.relaxation?.status === "optimal" &&
+              typeof objectiveValue === "number";
+
+            const cardHeight = getNodeCardHeight(node);
+            const top = y - cardHeight / 2;
+
+            const valuesDescription = nodeSecondaryLabel(node);
+
+            let unavailableText = "Valeurs non disponibles";
+
+            if (node.status === "pending") {
+              unavailableText = "Calcul en attente";
+            } else if (node.status === "pruned_infeasible") {
+              unavailableText = "Aucune solution réalisable";
+            } else if (!node.relaxation) {
+              unavailableText = "Relaxation non calculée";
+            }
+
             return (
               <g
                 key={node.id}
-                className={`bnb-live-tree-node is-${meta.tone}${selected ? " is-selected" : ""}`}
+                className={`bnb-live-tree-node is-${meta.tone}${
+                  selected ? " is-selected" : ""
+                }`}
                 role="button"
                 tabIndex={0}
-                aria-label={`${node.id}, ${meta.label}. ${nodeSecondaryLabel(node)}. Afficher le détail.`}
+                aria-label={`${node.id}, ${meta.label}. ${valuesDescription}. Afficher le détail.`}
                 aria-pressed={selected}
                 onClick={() => onSelect(node.id)}
-                onKeyDown={(event: { key: string; preventDefault: () => void }) => {
+                onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
                     onSelect(node.id);
                   }
                 }}
               >
-                <rect x={x - 82} y={y - 38} width="164" height="76" rx="13" />
-                <text className="bnb-live-node-id" x={x} y={y - 15} textAnchor="middle">{node.id}</text>
-                <text className="bnb-live-node-status" x={x} y={y + 5} textAnchor="middle">{meta.label}</text>
-                <text className="bnb-live-node-bound" x={x} y={y + 24} textAnchor="middle">
-                  {node.bound !== null ? `Borne ${numberText(node.bound)}` : node.status === "pending" ? "En attente" : "Voir le détail"}
+                <rect
+                  x={x - TREE_NODE_WIDTH / 2}
+                  y={top}
+                  width={TREE_NODE_WIDTH}
+                  height={cardHeight}
+                  rx="12"
+                />
+
+                <text
+                  className="bnb-live-node-id"
+                  x={x}
+                  y={top + 23}
+                  textAnchor="middle"
+                >
+                  {node.id}
                 </text>
+
+                <text
+                  className="bnb-live-node-status"
+                  x={x}
+                  y={top + 42}
+                  textAnchor="middle"
+                >
+                  {meta.label}
+                </text>
+
+                {variableValues.length > 0 ? (
+                  variableValues.map(([name, value], index) => (
+                    <text
+                      key={`${node.id}-${name}`}
+                      className="bnb-live-node-variable"
+                      x={x}
+                      y={top + 64 + index * 19}
+                      textAnchor="middle"
+                    >
+                      {name} = {numberText(value)}
+                    </text>
+                  ))
+                ) : (
+                  <text
+                    className="bnb-live-node-empty"
+                    x={x}
+                    y={top + 70}
+                    textAnchor="middle"
+                  >
+                    {unavailableText}
+                  </text>
+                )}
+
+                {hasObjective && (
+                  <text
+                    className="bnb-live-node-objective"
+                    x={x}
+                    y={top + cardHeight - 13}
+                    textAnchor="middle"
+                  >
+                    {node.status === "integer" ? "Z (entier)" : "Z (relaxation)"}
+                    {" = "}
+                    {numberText(objectiveValue)}
+                  </text>
+                )}
               </g>
             );
           })}
@@ -224,16 +438,8 @@ function TreeView({
       )}
     </div>
   );
-}
+}function BranchBoundSimplexStep({ iteration, index }: { iteration: SimplexIteration; index: number }) {
 
-function SimplexTable({ iteration, index }: { iteration: SimplexIteration; index: number }) {
-  const enteringColumn = iteration.enteringVariable
-    ? iteration.columns.indexOf(iteration.enteringVariable)
-    : -1;
-  const leavingRow = iteration.leavingVariable
-    ? iteration.basis.indexOf(iteration.leavingVariable)
-    : -1;
-  const hasPivot = enteringColumn >= 0 && leavingRow >= 0;
 
   return (
     <article className="bnb-live-simplex-step">
@@ -245,56 +451,7 @@ function SimplexTable({ iteration, index }: { iteration: SimplexIteration; index
         <span className="bnb-live-phase-badge">{iteration.phase === 1 ? "Phase I · Faisabilité" : "Phase II · Optimisation"}</span>
       </div>
 
-      <div className="bnb-live-table-scroll">
-        <table className="bnb-live-simplex-table">
-          <thead>
-            <tr>
-              <th scope="col">Base</th>
-              {iteration.columns.map((column, columnIndex) => (
-                <th
-                  scope="col"
-                  key={column}
-                  className={columnIndex === enteringColumn ? "is-entering" : ""}
-                >
-                  {column}
-                  {columnIndex === enteringColumn && <small>Entrante</small>}
-                </th>
-              ))}
-              <th scope="col">Sol.</th>
-            </tr>
-          </thead>
-          <tbody>
-            {iteration.tableau.map((row, rowIndex) => (
-              <tr key={`${iteration.phase}-${iteration.iteration}-row-${rowIndex}`} className={rowIndex === leavingRow ? "is-leaving" : ""}>
-                <th scope="row">{iteration.basis[rowIndex] ?? `L${rowIndex + 1}`}</th>
-                {iteration.columns.map((column, columnIndex) => {
-                  const isPivot = hasPivot && rowIndex === leavingRow && columnIndex === enteringColumn;
-                  return (
-                    <td
-                      key={`${column}-${rowIndex}`}
-                      className={`${columnIndex === enteringColumn ? "is-entering" : ""}${isPivot ? " is-pivot" : ""}`}
-                    >
-                      {numberText(row[columnIndex] ?? 0)}
-                    </td>
-                  );
-                })}
-                <td className="bnb-live-table-rhs">{numberText(row[row.length - 1] ?? 0)}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <th scope="row">Cⱼ − Zⱼ</th>
-              {iteration.columns.map((column, columnIndex) => (
-                <td key={column} className={columnIndex === enteringColumn ? "is-entering" : ""}>
-                  {numberText(iteration.reducedCosts[columnIndex] ?? 0)}
-                </td>
-              ))}
-              <td>—</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+      <SimplexTableau iteration={iteration} />
 
       <div className="bnb-live-pivot-grid">
         <div><span>Variable entrante</span><strong>{iteration.enteringVariable ?? "Aucune · optimalité de la phase"}</strong></div>
@@ -408,7 +565,7 @@ function NodeDetail({ node, problem }: { node: BranchBoundNode; problem: Optimiz
             {relaxation.iterations.length > 0 ? (
               <div className="bnb-live-simplex-history">
                 {relaxation.iterations.map((iteration, index) => (
-                  <SimplexTable
+                  <BranchBoundSimplexStep
                     key={`${node.id}-phase-${iteration.phase}-iteration-${iteration.iteration}-${index}`}
                     iteration={iteration}
                     index={index}
