@@ -1,4 +1,6 @@
-import { BookOpen, Network, Settings2 } from "lucide-react";
+import {
+  Settings2
+} from "lucide-react";
 import { Route, Routes } from "react-router";
 
 import WorkspaceLayout from "./layouts/WorkspaceLayout";
@@ -7,6 +9,8 @@ import SolvePage from "./pages/SolvePage";
 import AnalysisPage from "./pages/AnalysisPage";
 import SimplexPage from "./pages/SimplexPage";
 import BranchBoundPage from "./pages/BranchBoundPage";
+import MethodsPage from "./pages/MethodsPage";
+import DocumentationPage from "./pages/DocumentationPage";
 import HistoryPage from "./pages/HistoryPage";
 import HistoryDetailPage from "./pages/HistoryDetailPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
@@ -24,28 +28,8 @@ function App() {
         <Route path="analysis" element={<AnalysisPage />} />
         <Route path="simplex" element={<SimplexPage />} />
         <Route path="branch-bound" element={<BranchBoundPage />} />
-        <Route
-          path="methods"
-          element={
-            <PlaceholderPage
-              icon={<Network size={25} />}
-              eyebrow="Explorer"
-              title="Les méthodes d’optimisation."
-              description="Découvrez les méthodes du cours, leurs principes, leurs conditions d’application et leurs étapes de résolution."
-            />
-          }
-        />
-        <Route
-          path="documentation"
-          element={
-            <PlaceholderPage
-              icon={<BookOpen size={25} />}
-              eyebrow="Documentation"
-              title="Comprendre les méthodes."
-              description="Un espace consacré aux notions mathématiques, aux algorithmes et aux explications utilisées par Orizone."
-            />
-          }
-        />
+        <Route path="methods" element={<MethodsPage />} />
+        <Route path="documentation" element={<DocumentationPage />} />
         <Route path="history" element={<HistoryPage />} />
         <Route path="history/:id" element={<HistoryDetailPage />} />
         <Route
