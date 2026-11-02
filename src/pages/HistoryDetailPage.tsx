@@ -3,16 +3,20 @@ import {
   ArrowLeft,
   CheckCircle2,
   Clock3,
+  Download,
+  FileCode2,
   GitBranch,
   Info,
+  LoaderCircle,
   Table2,
   Trophy,
 } from "lucide-react";
 import { Link, useParams } from "react-router";
 
-import type { ResolutionHistoryEntry } from "../types/history";
+import type { ResolutionHistoryEntry, SimplexHistoryEntry } from "../types/history";
 import type { SimplexIteration } from "../engine/simplex";
 import { getResolutionHistoryEntry } from "../utils/resolution-history";
+import { downloadSimplexReport, type SimplexReportFormat } from "../services/report-export";
 import "../styles/history.css";
 
 const EPSILON = 1e-9;
@@ -182,6 +186,55 @@ function BranchBoundDetail({ entry }: { entry: Extract<ResolutionHistoryEntry, {
   );
 }
 
+function SimplexExportActions({ entry }: { entry: SimplexHistoryEntry }) {
+  const [exporting, setExporting] = useState<SimplexReportFormat | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleExport(format: SimplexReportFormat) {
+    setExporting(format);
+    setError(null);
+    try {
+      await downloadSimplexReport(entry, format);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "L’export du rapport a échoué.");
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  return (
+    <section className="workspace-card history-export-card" aria-labelledby="history-export-title">
+      <div className="history-export-copy">
+        <span className="card-kicker">RAPPORT SCIENTIFIQUE</span>
+        <h2 id="history-export-title">Exporter cette résolution</h2>
+        <p>Générez un rapport LaTeX à partir du modèle, des tableaux et des résultats réellement enregistrés.</p>
+      </div>
+      <div className="history-export-actions">
+        <button
+          type="button"
+          className="button button-primary"
+          onClick={() => void handleExport("pdf")}
+          disabled={exporting !== null}
+        >
+          {exporting === "pdf" ? <LoaderCircle size={16} className="history-export-spinner" /> : <Download size={16} />}
+          {exporting === "pdf" ? "Compilation du PDF…" : "Télécharger le PDF"}
+        </button>
+        <button
+          type="button"
+          className="button button-secondary"
+          onClick={() => void handleExport("latex")}
+          disabled={exporting !== null}
+        >
+          {exporting === "latex" ? <LoaderCircle size={16} className="history-export-spinner" /> : <FileCode2 size={16} />}
+          {exporting === "latex" ? "Préparation du .tex…" : "Télécharger la source LaTeX"}
+        </button>
+      </div>
+      {error && <p className="history-export-error" role="alert">{error}</p>}
+      <p className="history-export-footnote">La compilation PDF nécessite que le service de rapports Orizone soit démarré.</p>
+    </section>
+  );
+}
+
 export default function HistoryDetailPage() {
   const { id } = useParams();
   const [entry, setEntry] = useState<ResolutionHistoryEntry | null>(null);
@@ -209,6 +262,7 @@ export default function HistoryDetailPage() {
         <span className="history-detail-method">{entry.method === "simplex" ? <Table2 size={17} /> : <GitBranch size={17} />}{entry.method === "simplex" ? "Simplexe" : "Branch & Bound"}</span>
       </div>
       <ModelCard entry={entry} />
+      {entry.method === "simplex" && <SimplexExportActions entry={entry} />}
       {entry.method === "simplex" ? <SimplexDetail entry={entry} /> : <BranchBoundDetail entry={entry} />}
       <div className="history-detail-footer"><CheckCircle2 size={16} /><span>Cette consultation utilise les résultats sauvegardés. Aucun calcul n'a été relancé.</span></div>
     </section>

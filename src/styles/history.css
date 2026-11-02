@@ -259,3 +259,102 @@
   .history-node-facts { display: grid; grid-template-columns: 1fr; }
   .history-math-block code { font-size: 9px; }
 }
+
+/* Orizone report export actions */
+.history-export-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px 24px;
+  padding: clamp(18px, 2.4vw, 26px);
+}
+
+.history-export-copy {
+  min-width: 0;
+}
+
+.history-export-copy h2 {
+  margin: 6px 0 7px;
+  font-size: clamp(18px, 1.8vw, 22px);
+  line-height: 1.3;
+}
+
+.history-export-copy p,
+.history-export-footnote {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.history-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.history-export-actions .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+.history-export-actions .button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.history-export-spinner {
+  animation: history-export-spin 1s linear infinite;
+}
+
+.history-export-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 11px 13px;
+  border: 1px solid rgba(177, 66, 54, 0.28);
+  border-radius: 8px;
+  background: rgba(177, 66, 54, 0.07);
+  color: #b14236;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.history-export-footnote {
+  grid-column: 1 / -1;
+  font-size: 11px;
+}
+
+@keyframes history-export-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 760px) {
+  .history-export-card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 15px;
+  }
+
+  .history-export-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 520px) {
+  .history-export-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .history-export-actions .button {
+    width: 100%;
+    white-space: normal;
+    text-align: center;
+  }
+}
