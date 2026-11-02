@@ -320,3 +320,230 @@
   .simplex-view-toolbar .iteration-actions .button { flex: 1 1 160px; }
   .simplex-timeline-step { min-width: 138px; }
 }
+
+
+/* ----------------------------------------------------------
+   Lecture pédagogique : textes plus lisibles et mieux séparés
+   ---------------------------------------------------------- */
+
+.simplex-live-explanation-copy > p,
+.simplex-pedagogy-intro,
+.simplex-operations-intro,
+.simplex-operations-result,
+.simplex-ratio-conclusion {
+  max-width: 850px;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.85;
+}
+
+.simplex-decision-grid {
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.simplex-decision-block {
+  padding: 16px;
+  gap: 13px;
+}
+
+.simplex-decision-block small {
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.simplex-decision-block strong {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.simplex-decision-block p {
+  font-size: 12px;
+  line-height: 1.85;
+}
+
+.simplex-ratio-analysis,
+.simplex-operations {
+  margin-top: 25px;
+  padding-top: 22px;
+}
+
+.simplex-ratio-analysis h3,
+.simplex-operations h3 {
+  line-height: 1.5;
+}
+
+.simplex-ratio-list {
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.simplex-ratio-item {
+  grid-template-columns: minmax(90px, .45fr) minmax(180px, 1.8fr) minmax(100px, .6fr);
+  padding: 13px;
+  gap: 13px;
+}
+
+.simplex-ratio-calculation {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.simplex-ratio-calculation code {
+  font-size: 12px;
+  white-space: normal;
+}
+
+.simplex-ratio-calculation p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.simplex-ratio-item > strong {
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.simplex-ratio-conclusion {
+  margin-top: 14px;
+  padding: 13px 15px;
+  background: color-mix(in srgb, var(--green) 7%, var(--surface));
+  border-left: 3px solid var(--green);
+}
+
+.simplex-operations ol {
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.simplex-operations li {
+  padding: 14px 15px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 12px;
+}
+
+.simplex-operations li > div {
+  display: grid;
+  gap: 9px;
+}
+
+.simplex-operations li code {
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: normal;
+}
+
+.simplex-operations li p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.85;
+}
+
+.simplex-operations-result {
+  margin-top: 17px !important;
+  padding: 13px 15px;
+  background: color-mix(in srgb, var(--green) 7%, var(--surface));
+  border-left: 3px solid var(--green);
+}
+
+.simplex-tableau-help {
+  padding: 12px 15px;
+  background: var(--surface-muted);
+  border-top: 1px solid var(--border);
+}
+
+.simplex-tableau-help p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.simplex-tableau-help strong {
+  color: var(--ink);
+  margin-left: 5px;
+}
+
+@media (max-width: 640px) {
+  .simplex-ratio-item {
+    grid-template-columns: 1fr;
+  }
+
+  .simplex-ratio-item > strong {
+    text-align: left;
+  }
+}
+
+/* État final de la résolution */
+
+.simplex-completion-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  margin-top: 20px;
+  padding: 20px;
+  background: color-mix(in srgb, var(--green) 7%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--green) 25%, var(--border));
+  border-left: 4px solid var(--green);
+  border-radius: 6px;
+}
+
+.simplex-completion-card > div:first-child {
+  display: grid;
+  gap: 9px;
+}
+
+.simplex-completion-card small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .05em;
+}
+
+.simplex-completion-card > div:first-child > strong {
+  color: var(--green-deep);
+  font-size: 15px;
+}
+
+.simplex-completion-card p {
+  max-width: 650px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.simplex-completion-value {
+  display: grid;
+  min-width: 130px;
+  gap: 7px;
+  padding: 12px 15px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+
+.simplex-completion-value strong {
+  color: var(--green-deep);
+  font-family: var(--serif);
+  font-size: 24px;
+}
+
+:root[data-theme="dark"] .simplex-completion-card > div:first-child > strong,
+:root[data-theme="dark"] .simplex-completion-value strong {
+  color: var(--green);
+}
+
+@media (max-width: 640px) {
+  .simplex-completion-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

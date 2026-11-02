@@ -16,6 +16,7 @@ import {
 import { Link } from "react-router";
 
 import { solveSimplex, type SimplexIteration, type SimplexResult } from "../engine/simplex";
+import { SimplexTableau } from "../components/algorithm/SimplexTableau";
 import { getOrCreateOptimizationRunId, loadOptimizationProblem } from "../utils/optimization-storage";
 import { saveResolutionHistory } from "../utils/resolution-history";
 import "../styles/algorithm-pages.css";
@@ -70,102 +71,120 @@ function iterationTitle(iteration: SimplexIteration, globalIndex: number, total:
   return `Tableau avant pivot ${globalIndex + 1}`;
 }
 
-function buildRowOperations(iteration: SimplexIteration): string[] {
+interface RowOperation {
+  formula: string;
+  explanation: string;
+}
+
+function buildRowOperations(iteration: SimplexIteration): RowOperation[] {
   const pivotRow = pivotRowIndex(iteration);
   const pivotColumn = pivotColumnIndex(iteration);
   const pivotValue = iteration.pivotValue;
 
-  if (pivotRow < 0 || pivotColumn < 0 || pivotValue === null || Math.abs(pivotValue) <= EPSILON) {
+  if (
+    pivotRow < 0 ||
+    pivotColumn < 0 ||
+    pivotValue === null ||
+    Math.abs(pivotValue) <= EPSILON
+  ) {
     return [];
   }
 
-  const operations = [
-    `L${pivotRow + 1} ← L${pivotRow + 1} / ${formatNumber(pivotValue)}`,
-  ];
+  const pivotLabel = `L${pivotRow + 1}`;
+  const pivotVariable = iteration.enteringVariable ?? "la variable choisie";
+  const operations: RowOperation[] = [];
+
+  operations.push({
+    formula: `${pivotLabel} ← ${pivotLabel} / ${formatNumber(pivotValue)}`,
+    explanation:
+      `Nous divisons tous les nombres de cette ligne par ${formatNumber(pivotValue)}. ` +
+      `Le but est de transformer le nombre situé dans la colonne ${pivotVariable} en 1. ` +
+      `Cette ligne servira ensuite à modifier les autres lignes.`,
+  });
+
+  const objectiveFactor = iteration.reducedCosts[pivotColumn] ?? 0;
+
+  if (Math.abs(objectiveFactor) > EPSILON) {
+    const sign = objectiveFactor > 0 ? "−" : "+";
+
+    operations.push({
+      formula:
+        `Lz ← Lz ${sign} ${formatNumber(Math.abs(objectiveFactor))} × ${pivotLabel}`,
+      explanation:
+        `Cette ligne représente notre objectif. Nous la modifions pour obtenir 0 ` +
+        `dans la colonne ${pivotVariable}. Cela permet de conserver un tableau ` +
+        `cohérent après le changement de variable.`,
+    });
+  }
 
   iteration.tableau.forEach((row, rowIndex) => {
     if (rowIndex === pivotRow) return;
+
     const factor = row[pivotColumn];
+
     if (Math.abs(factor) <= EPSILON) return;
 
-    if (factor > 0) {
-      operations.push(`L${rowIndex + 1} ← L${rowIndex + 1} − ${formatNumber(factor)} × L${pivotRow + 1}`);
-    } else {
-      operations.push(`L${rowIndex + 1} ← L${rowIndex + 1} + ${formatNumber(Math.abs(factor))} × L${pivotRow + 1}`);
-    }
+    const rowLabel = `L${rowIndex + 1}`;
+    const sign = factor > 0 ? "−" : "+";
+
+    operations.push({
+      formula:
+        `${rowLabel} ← ${rowLabel} ${sign} ${formatNumber(Math.abs(factor))} × ${pivotLabel}`,
+      explanation:
+        `Nous modifions cette ligne pour obtenir également 0 dans la colonne ` +
+        `${pivotVariable}. De cette manière, cette variable n'apparaît plus ` +
+        `dans les autres lignes du tableau.`,
+    });
   });
 
   return operations;
 }
 
-function SimplexTable({ iteration }: { iteration: SimplexIteration }) {
-  const pivotRow = pivotRowIndex(iteration);
+function getIterationNarrative(iteration: SimplexIteration): string {
+  if (iteration.enteringVariable && !iteration.leavingVariable) {
+    return (
+      `Le calcul montre que nous pouvons encore améliorer le résultat en faisant évoluer ` +
+      `${iteration.enteringVariable}. Mais aucune contrainte ne vient limiter cette évolution. ` +
+      `Le problème ne possède donc pas de meilleur résultat fini dans cette direction.`
+    );
+  }
+
+  if (iteration.phase === 1 && !iteration.enteringVariable) {
+    if (Math.abs(iteration.objectiveValue) <= EPSILON) {
+      return (
+        "La première vérification est terminée. Son résultat est égal à zéro : " +
+        "cela signifie que nous avons trouvé une manière de respecter toutes les contraintes " +
+        "en même temps. Nous pouvons maintenant chercher le meilleur résultat."
+      );
+    }
+
+    return (
+      "La première vérification n'a pas réussi à satisfaire toutes les contraintes. " +
+      "Certaines conditions du problème sont incompatibles entre elles. " +
+      "Il n'existe donc pas de solution qui respecte toutes les contraintes."
+    );
+  }
+
+  if (iteration.phase === 1) {
+    return (
+      "Nous commençons par vérifier qu'il est possible de respecter toutes les limites " +
+      "du problème. Cette première partie utilise temporairement des variables " +
+      "supplémentaires pour construire un point de départ valide."
+    );
+  }
+
+  if (!iteration.enteringVariable) {
+    return (
+      "Nous avons comparé les possibilités d'amélioration. Aucune variable ne permet " +
+      "encore d'améliorer le résultat. Le calcul a atteint son optimum : " +
+      "nous avons trouvé la meilleure valeur possible pour le modèle."
+    );
+  }
 
   return (
-    <div className="simplex-live-table-wrap" tabIndex={0} aria-label="Tableau du Simplexe, défilement horizontal disponible">
-      <table className="simplex-live-table">
-        <thead>
-          <tr>
-            <th scope="col">Base</th>
-            {iteration.columns.map((column) => (
-              <th
-                scope="col"
-                key={column}
-                className={iteration.enteringVariable === column ? "is-pivot-column-header" : undefined}
-              >
-                {column}
-              </th>
-            ))}
-            <th scope="col">Sol.</th>
-            <th scope="col">Rapport</th>
-          </tr>
-        </thead>
-        <tbody>
-          {iteration.tableau.map((row, rowIndex) => (
-            <tr key={`row-${rowIndex}`}>
-              <th scope="row" className={pivotRow === rowIndex ? "is-pivot-row-header" : undefined}>
-                {iteration.basis[rowIndex] ?? `L${rowIndex + 1}`}
-              </th>
-              {iteration.columns.map((column, columnIndex) => {
-                const isPivotRow = pivotRow === rowIndex;
-                const isPivotColumn = iteration.enteringVariable === column;
-                const isPivotCell = isPivotRow && isPivotColumn;
-                const cellClasses = [
-                  isPivotRow ? "is-pivot-row" : "",
-                  isPivotColumn ? "is-pivot-column" : "",
-                  isPivotCell ? "is-pivot-cell" : "",
-                ].filter(Boolean).join(" ");
-
-                return (
-                  <td className={cellClasses || undefined} key={column}>
-                    {formatNumber(row[columnIndex])}
-                  </td>
-                );
-              })}
-              <td className={pivotRow === rowIndex ? "is-pivot-row" : undefined}>
-                {formatNumber(row[iteration.columns.length])}
-              </td>
-              <td className="simplex-ratio-cell">
-                {formatNumber(iteration.ratioTests[rowIndex])}
-              </td>
-            </tr>
-          ))}
-          <tr className="simplex-reduced-cost-row">
-            <th scope="row">Cⱼ − Zⱼ</th>
-            {iteration.columns.map((column, columnIndex) => (
-              <td
-                key={column}
-                className={iteration.enteringVariable === column ? "is-pivot-column" : undefined}
-              >
-                {formatNumber(iteration.reducedCosts[columnIndex])}
-              </td>
-            ))}
-            <td>—</td>
-            <td>—</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    "Nous cherchons maintenant à améliorer le résultat. Le tableau nous indique " +
+    "quelle variable choisir, puis quelle contrainte risque d'être atteinte en premier. " +
+    "Nous allons utiliser ces informations pour construire le tableau suivant."
   );
 }
 
@@ -173,27 +192,35 @@ function PivotDecision({ iteration }: { iteration: SimplexIteration }) {
   const pivotRow = pivotRowIndex(iteration);
   const pivotColumn = pivotColumnIndex(iteration);
 
-  if (pivotColumn < 0 || !iteration.enteringVariable) {
-    return (
-      <div className="simplex-decision-empty">
-        <CheckCircle2 size={17} />
-        <p>{iteration.explanation}</p>
-      </div>
-    );
-  }
+  if (!iteration.enteringVariable || pivotColumn < 0) return null;
 
   const reducedCost = iteration.reducedCosts[pivotColumn];
+
+  const candidates = iteration.columns
+    .map((name, index) => ({
+      name,
+      value: iteration.reducedCosts[index] ?? 0,
+    }))
+    .filter((candidate) => candidate.value > EPSILON)
+    .sort((left, right) => right.value - left.value);
+
+  const candidatesText = candidates
+    .map((candidate) => `${candidate.name} : ${formatNumber(candidate.value)}`)
+    .join(" ; ");
 
   return (
     <div className="simplex-decision-grid">
       <section className="simplex-decision-block">
         <span className="simplex-decision-step">1</span>
         <div>
-          <small>Choix de la variable entrante</small>
-          <strong>{iteration.enteringVariable}</strong>
+          <small>Quelle variable choisir ?</small>
+          <strong>Nous choisissons {iteration.enteringVariable}</strong>
           <p>
-            Son coût réduit vaut <b>{formatNumber(reducedCost)}</b>. Le moteur applique la règle de Bland :
-            il retient la première variable non basique admissible dont Cⱼ − Zⱼ est positif.
+            Nous comparons les possibilités indiquées dans la ligne de l'objectif.
+            {candidatesText ? ` Voici les valeurs positives : ${candidatesText}.` : ""}
+            {" "}La meilleure valeur est {formatNumber(reducedCost)} pour
+            {" "}{iteration.enteringVariable}. Nous choisissons donc cette variable
+            pour essayer d'améliorer le résultat.
           </p>
         </div>
       </section>
@@ -201,11 +228,17 @@ function PivotDecision({ iteration }: { iteration: SimplexIteration }) {
       <section className="simplex-decision-block">
         <span className="simplex-decision-step">2</span>
         <div>
-          <small>Test des rapports</small>
-          <strong>{iteration.leavingVariable ? `${iteration.leavingVariable} sort de la base` : "Aucune ligne sortante"}</strong>
+          <small>Quelle limite sera atteinte en premier ?</small>
+          <strong>
+            {iteration.leavingVariable
+              ? `${iteration.leavingVariable} correspond à la première limite atteinte`
+              : "Aucune limite ne bloque cette évolution"}
+          </strong>
           <p>
-            On calcule Sol. / coefficient de la colonne entrante uniquement lorsque ce coefficient est strictement positif.
-            Le plus petit rapport admissible détermine la ligne sortante.
+            Nous calculons combien de fois nous pouvons augmenter
+            {" "}{iteration.enteringVariable} sans dépasser chaque contrainte.
+            La plus petite quantité calculée indique la limite que nous atteindrons
+            en premier.
           </p>
         </div>
       </section>
@@ -213,12 +246,17 @@ function PivotDecision({ iteration }: { iteration: SimplexIteration }) {
       <section className="simplex-decision-block">
         <span className="simplex-decision-step">3</span>
         <div>
-          <small>Élément pivot</small>
-          <strong>{formatNumber(iteration.pivotValue)}</strong>
+          <small>Quel nombre va transformer le tableau ?</small>
+          <strong>
+            {iteration.pivotValue === null
+              ? "Aucun pivot disponible"
+              : formatNumber(iteration.pivotValue)}
+          </strong>
           <p>
-            {pivotRow >= 0
-              ? `Le pivot se trouve sur L${pivotRow + 1}, à l’intersection avec la colonne ${iteration.enteringVariable}.`
-              : "Aucun pivot n’est disponible pour cette étape."}
+            Ce nombre se trouve au croisement de la ligne choisie et de la colonne
+            {" "}{iteration.enteringVariable}. Nous allons nous en servir pour
+            transformer les lignes et préparer le prochain tableau.
+            {pivotRow >= 0 ? ` Il se trouve sur la ligne ${pivotRow + 1}.` : ""}
           </p>
         </div>
       </section>
@@ -235,49 +273,108 @@ function RatioDetails({ iteration }: { iteration: SimplexIteration }) {
   return (
     <div className="simplex-ratio-analysis">
       <div className="simplex-subsection-heading">
-        <span className="card-kicker">TEST DES RAPPORTS</span>
-        <h3>Pourquoi cette ligne sort-elle de la base ?</h3>
+        <span className="card-kicker">COMPARAISON DES LIMITES</span>
+        <h3>Jusqu'où pouvons-nous augmenter {iteration.enteringVariable} ?</h3>
       </div>
+
+      <p className="simplex-pedagogy-intro">
+        Chaque contrainte impose une limite. Nous divisons la quantité disponible
+        par le coefficient de la variable choisie. Le plus petit résultat positif
+        indique la contrainte qui sera atteinte en premier.
+      </p>
+
       <div className="simplex-ratio-list">
         {iteration.tableau.map((row, rowIndex) => {
           const coefficient = row[pivotColumn];
           const rhs = row[iteration.columns.length];
           const ratio = iteration.ratioTests[rowIndex];
           const selected = rowIndex === pivotRow;
+          const admissible = coefficient > EPSILON && ratio !== null;
+
           return (
-            <div className={`simplex-ratio-item${selected ? " is-selected" : ""}`} key={`ratio-${rowIndex}`}>
-              <span className="simplex-ratio-base">{iteration.basis[rowIndex] ?? `L${rowIndex + 1}`}</span>
-              <code>
-                {coefficient > EPSILON
-                  ? `${formatNumber(rhs)} / ${formatNumber(coefficient)} = ${formatNumber(ratio)}`
-                  : `coefficient ${formatNumber(coefficient)} → non admissible`}
-              </code>
-              <strong>{selected ? "minimum retenu" : ratio === null ? "écarté" : "admissible"}</strong>
+            <div
+              className={`simplex-ratio-item${selected ? " is-selected" : ""}`}
+              key={`ratio-${rowIndex}`}
+            >
+              <span className="simplex-ratio-base">
+                {iteration.basis[rowIndex] ?? `L${rowIndex + 1}`}
+              </span>
+
+              <div className="simplex-ratio-calculation">
+                {admissible ? (
+                  <>
+                    <code>
+                      {formatNumber(rhs)} ÷ {formatNumber(coefficient)} = {formatNumber(ratio)}
+                    </code>
+                    <p>
+                      Cette limite serait atteinte après {formatNumber(ratio)} unité(s)
+                      supplémentaires.
+                    </p>
+                  </>
+                ) : (
+                  <p>
+                    Cette contrainte ne limite pas l'augmentation de
+                    {" "}{iteration.enteringVariable} dans le sens choisi.
+                  </p>
+                )}
+              </div>
+
+              <strong>
+                {selected
+                  ? "Première limite atteinte"
+                  : admissible
+                    ? "Autre limite"
+                    : "Ne bloque pas"}
+              </strong>
             </div>
           );
         })}
       </div>
+
+      {iteration.leavingVariable && (
+        <p className="simplex-ratio-conclusion">
+          <strong>Conclusion :</strong> la limite associée à {iteration.leavingVariable}
+          {" "}sera atteinte avant les autres. C'est pour cette raison que nous
+          retenons cette ligne pour le prochain calcul.
+        </p>
+      )}
     </div>
   );
 }
 
 function RowOperations({ iteration }: { iteration: SimplexIteration }) {
   const operations = buildRowOperations(iteration);
+
   if (operations.length === 0) return null;
 
   return (
     <div className="simplex-operations">
       <div className="simplex-subsection-heading">
-        <span className="card-kicker">PASSAGE AU TABLEAU SUIVANT</span>
-        <h3>Opérations de pivot</h3>
+        <span className="card-kicker">CONSTRUCTION DU TABLEAU SUIVANT</span>
+        <h3>Comment effectuons-nous les changements ?</h3>
       </div>
+
+      <p className="simplex-operations-intro">
+        Nous voulons obtenir 1 dans la colonne de la variable choisie, sur la ligne
+        du pivot, et 0 dans cette même colonne sur toutes les autres lignes.
+        Voici comment nous y arrivons.
+      </p>
+
       <ol>
         {operations.map((operation, index) => (
-          <li key={`${index}-${operation}`}><code>{operation}</code></li>
+          <li key={`${index}-${operation.formula}`}>
+            <div>
+              <code>{operation.formula}</code>
+              <p>{operation.explanation}</p>
+            </div>
+          </li>
         ))}
       </ol>
-      <p>
-        La première opération normalise la ligne du pivot. Les suivantes annulent la colonne entrante dans toutes les autres lignes.
+
+      <p className="simplex-operations-result">
+        Une fois ces opérations terminées, nous obtenons un nouveau tableau.
+        Il représente le même problème, mais avec une nouvelle variable dans
+        la solution actuelle. Nous pouvons alors recommencer le raisonnement.
       </p>
     </div>
   );
@@ -286,17 +383,84 @@ function RowOperations({ iteration }: { iteration: SimplexIteration }) {
 function IterationExplanation({ iteration }: { iteration: SimplexIteration }) {
   return (
     <article className="simplex-explanation simplex-live-explanation simplex-pedagogy-card">
-      <div className="simplex-explanation-icon"><Lightbulb size={21} /></div>
+      <div className="simplex-explanation-icon">
+        <Lightbulb size={21} />
+      </div>
+
       <div className="simplex-live-explanation-copy">
-        <span className="card-kicker">LECTURE DE L’ITÉRATION</span>
-        <h2>{iteration.phase === 1 ? "Phase I · recherche de faisabilité" : "Phase II · optimisation"}</h2>
-        <p>{iteration.explanation}</p>
-        <div className="simplex-pivot-facts">
-          <span><small>Variable entrante</small><strong>{iteration.enteringVariable ?? "Aucune"}</strong></span>
-          <span><small>Variable sortante</small><strong>{iteration.leavingVariable ?? "Aucune"}</strong></span>
-          <span><small>Élément pivot</small><strong>{formatNumber(iteration.pivotValue)}</strong></span>
-          <span><small>Valeur de l’objectif du tableau</small><strong>{formatNumber(iteration.objectiveValue)}</strong></span>
-        </div>
+        <span className="card-kicker">COMPRENDRE LE CALCUL</span>
+
+        <h2>
+          {iteration.phase === 1
+            ? "Vérifier que toutes les règles peuvent être respectées"
+            : iteration.enteringVariable
+              ? "Chercher une meilleure solution"
+              : "La meilleure solution a été trouvée"}
+        </h2>
+
+        <p>{getIterationNarrative(iteration)}</p>
+
+        {iteration.enteringVariable &&
+        iteration.leavingVariable &&
+        iteration.pivotValue !== null ? (
+          <div className="simplex-pivot-facts">
+            <span>
+              <small>Variable que nous allons faire évoluer</small>
+              <strong>{iteration.enteringVariable}</strong>
+            </span>
+
+            <span>
+              <small>Contrainte atteinte en premier</small>
+              <strong>{iteration.leavingVariable}</strong>
+            </span>
+
+            <span>
+              <small>Nombre utilisé pour transformer le tableau</small>
+              <strong>{formatNumber(iteration.pivotValue)}</strong>
+            </span>
+
+            <span>
+              <small>Valeur actuelle de l'objectif</small>
+              <strong>{formatNumber(iteration.objectiveValue)}</strong>
+            </span>
+          </div>
+        ) : (
+          <div className="simplex-completion-card">
+            <div>
+              <small>ÉTAT DU CALCUL</small>
+
+              <strong>
+                {iteration.phase === 1
+                  ? Math.abs(iteration.objectiveValue) <= EPSILON
+                    ? "Vérification terminée"
+                    : "Les contraintes ne sont pas toutes compatibles"
+                  : iteration.enteringVariable
+                    ? "Amélioration possible sans limite"
+                    : "Résolution terminée"}
+              </strong>
+
+              <p>
+                {iteration.phase === 1
+                  ? Math.abs(iteration.objectiveValue) <= EPSILON
+                    ? "Nous avons trouvé un point de départ qui respecte toutes les contraintes. Nous pouvons maintenant chercher le meilleur résultat."
+                    : "La vérification montre que toutes les contraintes ne peuvent pas être respectées simultanément."
+                  : iteration.enteringVariable
+                    ? "Nous pouvons encore améliorer le résultat, mais aucune contrainte ne vient limiter cette évolution."
+                    : "Nous avons vérifié les possibilités d'amélioration. Aucune ne permet d'obtenir un meilleur résultat tout en respectant les contraintes. Nous pouvons arrêter les calculs."}
+              </p>
+            </div>
+
+            <div className="simplex-completion-value">
+              <small>
+                {iteration.phase === 1
+                  ? "Résultat de la vérification"
+                  : "Valeur de l'objectif"}
+              </small>
+              <strong>{formatNumber(iteration.objectiveValue)}</strong>
+            </div>
+          </div>
+        )}
+
         <PivotDecision iteration={iteration} />
         <RatioDetails iteration={iteration} />
         <RowOperations iteration={iteration} />
@@ -304,7 +468,6 @@ function IterationExplanation({ iteration }: { iteration: SimplexIteration }) {
     </article>
   );
 }
-
 function IterationBlock({
   iteration,
   index,
@@ -330,16 +493,26 @@ function IterationBlock({
         <div className="workspace-card-heading">
           <div>
             <span className="card-kicker">TABLEAU DU SIMPLEXE</span>
-            <h2>{iteration.enteringVariable ? `Entrée ${iteration.enteringVariable} · sortie ${iteration.leavingVariable ?? "—"}` : "Tableau de vérification"}</h2>
+            <h2>
+              {iteration.enteringVariable && iteration.leavingVariable
+                ? `Nous faisons évoluer ${iteration.enteringVariable} : la limite ${iteration.leavingVariable} est atteinte en premier`
+                : iteration.phase === 1
+                  ? "Vérification des contraintes"
+                  : "Aucune amélioration supplémentaire possible"}
+            </h2>
           </div>
           <span className="pending-badge simplex-computed-badge"><span /> Calcul réel</span>
         </div>
-        <SimplexTable iteration={iteration} />
-        <div className="pivot-legend simplex-live-legend">
-          <span><i className="legend-pivot-column" /> Colonne entrante</span>
-          <span><i className="legend-pivot-row" /> Ligne sortante</span>
-          <span><i className="legend-pivot-cell" /> Élément pivot</span>
-        </div>
+        <SimplexTableau iteration={iteration} />
+        {iteration.enteringVariable &&
+          iteration.leavingVariable &&
+          iteration.pivotValue !== null && (
+            <div className="pivot-legend simplex-live-legend">
+              <span><i className="legend-pivot-column" /> Variable que nous allons faire évoluer</span>
+              <span><i className="legend-pivot-row" /> Contrainte atteinte en premier</span>
+              <span><i className="legend-pivot-cell" /> Nombre utilisé pour transformer le tableau</span>
+            </div>
+          )}
       </article>
 
       <IterationExplanation iteration={iteration} />
