@@ -11,6 +11,7 @@ import {
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 
 import ThemeToggle from "../components/layout/ThemeToggle";
+import OrizoneLogo from "../components/brand/OrizoneLogo";
 import "../styles/workspace-layout.css";
 
 const navigationItems = [
@@ -41,10 +42,7 @@ export default function WorkspaceLayout() {
     <div className="workspace-shell">
       <aside className="workspace-sidebar" aria-label="Navigation principale d’Orizone">
         <Link to="/" className="workspace-brand" aria-label="Orizone, accueil">
-          <span className="workspace-brand-mark">
-            <Orbit size={21} strokeWidth={1.7} />
-          </span>
-          <span>ORIZONE</span>
+          <OrizoneLogo />
         </Link>
 
         <div className="sidebar-section-label">ESPACE DE TRAVAIL</div>
